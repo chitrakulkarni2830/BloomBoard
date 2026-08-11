@@ -8,9 +8,13 @@ import com.bloomboard.backend.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -22,9 +26,16 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping("/batches")
-    public List<BatchResponse> getActiveBatches() {
-        List<Batch> batches = inventoryService.getAllActiveBatches();
-        return batches.stream().map(this::mapToBatchResponse).collect(Collectors.toList());
+    public List<BatchResponse> getAllBatches() {
+        return inventoryService.getAllActiveBatches().stream()
+                .map(this::mapToBatchResponse)
+                .toList();
+    }
+
+    @PostMapping("/batches/{id}/waste")
+    public ResponseEntity<Void> wasteBatch(@PathVariable UUID id) {
+        inventoryService.wasteBatch(id);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/batches")
@@ -40,6 +51,13 @@ public class InventoryController {
     }
 
     private BatchResponse mapToBatchResponse(Batch batch) {
+        // Dynamic discounting: discount if expiring in 48 hours or less
+        boolean isDiscounted = false;
+        if (batch.getExpiryDate() != null) {
+            long hoursToExpiry = ChronoUnit.HOURS.between(LocalDateTime.now(), batch.getExpiryDate());
+            isDiscounted = hoursToExpiry >= 0 && hoursToExpiry <= 48;
+        }
+
         return BatchResponse.builder()
                 .id(batch.getId())
                 .product(batch.getProduct().getName())
@@ -47,6 +65,7 @@ public class InventoryController {
                 .quantity(batch.getQuantityAvailable())
                 .expiryDate(batch.getExpiryDate().toLocalDate())
                 .status(batch.getStatus().name())
+                .isDiscounted(isDiscounted)
                 .build();
     }
 }

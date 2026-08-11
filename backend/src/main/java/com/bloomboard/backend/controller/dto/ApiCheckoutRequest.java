@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +20,9 @@ public record ApiCheckoutRequest(
     
     @NotEmpty(message = "Items list cannot be empty")
     @Valid
-    List<ApiCheckoutItem> items
+    List<ApiCheckoutItem> items,
+    
+    LocalDateTime deliveryDate
 ) {
     public record ApiCheckoutItem(
         UUID bouquetId,

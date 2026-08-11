@@ -107,4 +107,15 @@ public class InventoryService {
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
+
+    @Transactional
+    public void wasteBatch(UUID batchId) {
+        log.info("Marking batch {} as WASTED", batchId);
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new IllegalArgumentException("Batch not found with id: " + batchId));
+        
+        batch.setStatus(Batch.BatchStatus.DISCARDED);
+        batch.setQuantityAvailable(0);
+        batchRepository.save(batch);
+    }
 }

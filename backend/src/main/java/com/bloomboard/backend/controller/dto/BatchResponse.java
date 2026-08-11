@@ -15,4 +15,5 @@ public class BatchResponse {
     private Integer quantity;
     private LocalDate expiryDate;
     private String status;
+    private Boolean isDiscounted;
 }

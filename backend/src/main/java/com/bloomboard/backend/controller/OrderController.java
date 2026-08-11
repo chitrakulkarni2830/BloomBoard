@@ -35,7 +35,8 @@ public class OrderController {
         CheckoutRequest serviceRequest = new CheckoutRequest(
                 request.cartId(),
                 request.customerEmail(),
-                serviceItems
+                serviceItems,
+                request.deliveryDate()
         );
 
         Order completedOrder = orderService.processCheckout(serviceRequest);

@@ -42,7 +42,7 @@ class InventoryControllerTest {
 
         when(inventoryService.getAllActiveBatches()).thenReturn(List.of(batch));
 
-        List<BatchResponse> response = inventoryController.getActiveBatches();
+        List<BatchResponse> response = inventoryController.getAllBatches();
 
         assertEquals(1, response.size());
         BatchResponse dto = response.get(0);

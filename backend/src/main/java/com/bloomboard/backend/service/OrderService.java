@@ -50,6 +50,7 @@ public class OrderService {
         order.setCustomerEmail(request.customerEmail());
         order.setStatus(Order.OrderStatus.CONFIRMED);
         order.setTotalAmount(totalAmount);
+        order.setDeliveryDate(request.deliveryDate());
         Order savedOrder = orderRepository.save(order);
 
         for (CheckoutItem itemRequest : request.items()) {

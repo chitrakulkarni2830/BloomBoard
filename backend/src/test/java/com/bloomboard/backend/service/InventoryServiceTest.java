@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,5 +76,22 @@ class InventoryServiceTest {
         assertEquals(2, result.getAllocatedBatches().size());
         assertEquals(20, result.getAllocatedBatches().get(batch1));
         assertEquals(15, result.getAllocatedBatches().get(batch2));
+    }
+
+    @Test
+    void testWasteBatch() {
+        UUID batchId = UUID.randomUUID();
+        Batch batch = new Batch();
+        batch.setId(batchId);
+        batch.setQuantityAvailable(10);
+        batch.setStatus(Batch.BatchStatus.ACTIVE);
+
+        when(batchRepository.findById(batchId)).thenReturn(Optional.of(batch));
+        when(batchRepository.save(any(Batch.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        inventoryService.wasteBatch(batchId);
+
+        assertEquals(0, batch.getQuantityAvailable());
+        assertEquals(Batch.BatchStatus.DISCARDED, batch.getStatus());
     }
 }
