@@ -136,6 +136,22 @@ function App() {
     }
   };
 
+  const handleWasteBatch = async (batchId) => {
+    if (!window.confirm('Are you sure you want to mark this batch as wasted? This cannot be undone.')) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/inventory/batches/${batchId}/waste`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to waste batch');
+      
+      await fetchBatches(); // Refresh table
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col relative">
       {/* Header */}
@@ -216,13 +232,13 @@ function App() {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="bg-emerald-50 p-4 rounded-xl text-emerald-600">
+            <div className="bg-amber-50 p-4 rounded-xl text-amber-600">
               <CalendarDays className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">System Status</p>
+              <p className="text-sm font-medium text-slate-500">Discounted / Expiring Soon</p>
               <p className="text-2xl font-bold text-slate-900">
-                {error ? 'Offline' : 'Online'}
+                {batches.filter(b => b.isDiscounted).length}
               </p>
             </div>
           </div>
@@ -260,18 +276,19 @@ function App() {
                   <th className="px-6 py-3 font-medium">Available Qty</th>
                   <th className="px-6 py-3 font-medium">Expiry Date</th>
                   <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                    <td colSpan="7" className="px-6 py-8 text-center text-slate-500">
                       Loading inventory...
                     </td>
                   </tr>
                 ) : batches.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                    <td colSpan="7" className="px-6 py-8 text-center text-slate-500">
                       No active batches found in the system.
                     </td>
                   </tr>
@@ -281,7 +298,16 @@ function App() {
                       <td className="px-6 py-4 font-mono text-xs text-slate-400" title={batch.id}>
                         #{batch.id.substring(0,8)}...
                       </td>
-                      <td className="px-6 py-4 font-medium text-slate-900">{batch.product}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        <div className="flex items-center gap-2">
+                          {batch.product}
+                          {batch.isDiscounted && (
+                            <span className="bg-amber-100 text-amber-700 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
+                              Expiring Soon - 50% Off
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-slate-500">{batch.sku}</td>
                       <td className="px-6 py-4">
                         <span className="font-semibold text-slate-700">{batch.quantity}</span>
@@ -289,7 +315,7 @@ function App() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <CalendarDays className="w-4 h-4 text-slate-400" />
-                          <span className="text-slate-600">{batch.expiryDate}</span>
+                          <span className={batch.isDiscounted ? "text-amber-600 font-medium" : "text-slate-600"}>{batch.expiryDate}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -297,11 +323,23 @@ function App() {
                           className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
                             batch.status === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : batch.status === 'DISCARDED'
+                              ? 'bg-red-50 text-red-700 border-red-200'
                               : 'bg-slate-100 text-slate-600 border-slate-200'
                           }`}
                         >
                           {batch.status}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {batch.status === 'ACTIVE' && (
+                          <button
+                            onClick={() => handleWasteBatch(batch.id)}
+                            className="text-red-500 hover:bg-red-50 hover:text-red-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Mark Waste
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))
