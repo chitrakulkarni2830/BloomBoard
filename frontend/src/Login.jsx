@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Package, Lock, User, AlertCircle } from 'lucide-react';
+import { Package, Lock, User, AlertCircle, Flower } from 'lucide-react';
+
+const PETALS = ['🌸', '🌺', '🌼', '🌻', '🌹', '💐', '🌷', '🏵️', '🌸', '🌼'];
 
 const Login = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
@@ -11,18 +13,13 @@ const Login = ({ onLoginSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       const response = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-
+      if (!response.ok) throw new Error('Invalid credentials. Please try again.');
       const data = await response.json();
       onLoginSuccess(data.token, data.username, data.role);
     } catch (err) {
@@ -33,66 +30,136 @@ const Login = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
-        <div className="p-8 pb-6 bg-slate-50 border-b border-slate-100 flex flex-col items-center">
-          <div className="bg-rose-100 p-4 rounded-2xl mb-4 shadow-sm shadow-rose-200">
-            <Package className="w-10 h-10 text-rose-600" />
+    <div
+      className="min-h-screen flex flex-col justify-center items-center p-4 relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, var(--color-1) 0%, var(--color-2) 50%, var(--color-4) 100%)' }}
+    >
+      {/* Floating petals */}
+      <div className="petal-bg">
+        {PETALS.map((p, i) => (
+          <span key={i} className="petal" style={{ left: `${(i * 10) + 2}%` }}>{p}</span>
+        ))}
+      </div>
+
+      {/* Corner decorations */}
+      <span className="bloom-decor top-left">🌸</span>
+      <span className="bloom-decor top-right">🌺</span>
+      <span className="bloom-decor bot-left">🌷</span>
+      <span className="bloom-decor bot-right">💐</span>
+
+      {/* Card */}
+      <div
+        className="w-full max-w-sm relative z-10 page-enter"
+        style={{
+          background: 'rgba(255,250,246,0.92)',
+          backdropFilter: 'blur(20px)',
+          border: '1.5px solid var(--color-border)',
+          borderRadius: '28px',
+          boxShadow: '0 20px 60px rgba(255,97,97,0.14), 0 4px 20px rgba(0,0,0,0.06)',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Top accent bar */}
+        <div style={{ height: '4px', background: 'linear-gradient(90deg, var(--color-5), var(--color-3), var(--color-5))' }} />
+
+        {/* Header */}
+        <div className="pt-10 pb-6 px-8 flex flex-col items-center" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <div
+            style={{
+              background: 'linear-gradient(135deg, var(--color-2), var(--color-4))',
+              borderRadius: '20px',
+              width: 72,
+              height: 72,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 36,
+              marginBottom: 16,
+              boxShadow: '0 4px 16px rgba(255,97,97,0.2)'
+            }}
+          >
+            🌸
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">BloomBoard</h2>
-          <p className="text-slate-500 mt-2 text-sm text-center">
-            Sign in to access the perishable inventory system
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.5px', marginBottom: 4 }}>
+            BloomBoard
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center' }}>
+            Your perishable inventory, beautifully managed
           </p>
         </div>
-        
-        <form onSubmit={handleSubmit} className="p-8">
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-8 py-7">
           {error && (
-            <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3 border border-red-100 text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0" />
+            <div
+              className="mb-5 flex items-center gap-3 text-sm"
+              style={{
+                background: 'var(--color-2)',
+                border: '1px solid #F4B8B8',
+                borderRadius: 12,
+                padding: '10px 14px',
+                color: '#c0392b'
+              }}
+            >
+              <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Username</label>
-              <div className="relative">
-                <User className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-100 transition-all"
-                  placeholder="admin"
-                />
-              </div>
+          <div style={{ marginBottom: 16 }}>
+            <label className="field-label">Username</label>
+            <div style={{ position: 'relative' }}>
+              <User
+                size={15}
+                style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }}
+              />
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                className="field-input"
+                style={{ paddingLeft: 36 }}
+              />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-100 transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
+          <div style={{ marginBottom: 8 }}>
+            <label className="field-label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock
+                size={15}
+                style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }}
+              />
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="field-input"
+                style={{ paddingLeft: 36 }}
+              />
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-8 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-rose-200 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="btn-primary"
+            style={{ width: '100%', marginTop: 24, padding: '13px', fontSize: 15 }}
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? '🌸 Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        {/* Bottom hint */}
+        <div style={{ padding: '0 32px 20px', textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+            Default credentials: <strong>admin</strong> / <strong>password</strong>
+          </p>
+        </div>
       </div>
     </div>
   );
