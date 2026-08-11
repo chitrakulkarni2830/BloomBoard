@@ -1,17 +1,109 @@
-import React from 'react';
-import { CalendarDays, Package, Search, AlertCircle, ShoppingCart } from 'lucide-react';
-
-const MOCK_BATCHES = [
-  { id: '1', product: 'Red Rose', sku: 'RSE-RED-01', quantity: 150, expiryDate: '2026-08-12', status: 'ACTIVE' },
-  { id: '2', product: 'Red Rose', sku: 'RSE-RED-01', quantity: 200, expiryDate: '2026-08-15', status: 'ACTIVE' },
-  { id: '3', product: 'Tulip White', sku: 'TLP-WHT-02', quantity: 50, expiryDate: '2026-08-11', status: 'ACTIVE' },
-  { id: '4', product: 'Baby\'s Breath', sku: 'BTH-WHT-03', quantity: 300, expiryDate: '2026-08-20', status: 'ACTIVE' },
-  { id: '5', product: 'Sunflower', sku: 'SUN-YEL-01', quantity: 0, expiryDate: '2026-08-10', status: 'DEPLETED' },
-];
+import React, { useState, useEffect } from 'react';
+import { CalendarDays, Package, Search, AlertCircle, ShoppingCart, X } from 'lucide-react';
 
 function App() {
+  const [batches, setBatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+  
+  // Form State
+  const [formData, setFormData] = useState({
+    productId: '',
+    supplierName: '',
+    quantity: '',
+    purchasePrice: '',
+    expiryDate: ''
+  });
+
+  const fetchBatches = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/inventory/batches');
+      if (!response.ok) throw new Error('Failed to fetch batches');
+      const data = await response.json();
+      setBatches(data);
+      setError(null);
+    } catch (err) {
+      setError('Could not connect to server. Is the backend running?');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/inventory/products');
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+        if (data.length > 0) {
+          setFormData(prev => ({ ...prev, productId: data[0].id }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch products', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBatches();
+    fetchProducts();
+  }, []);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setFormData({
+      productId: products.length > 0 ? products[0].id : '',
+      supplierName: '',
+      quantity: '',
+      purchasePrice: '',
+      expiryDate: ''
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Add time to the end of the date string to match LocalDateTime required by backend
+      const expiryDateTime = `${formData.expiryDate}T00:00:00`;
+      
+      const payload = {
+        productId: formData.productId,
+        supplierName: formData.supplierName,
+        quantity: parseInt(formData.quantity, 10),
+        purchasePrice: parseFloat(formData.purchasePrice),
+        expiryDate: expiryDateTime
+      };
+
+      const response = await fetch('http://localhost:8080/api/inventory/batches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Failed to create batch');
+      
+      await fetchBatches(); // Refresh data
+      handleCloseModal();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -50,7 +142,10 @@ function App() {
             <h2 className="text-2xl font-bold text-slate-900">Inventory Dashboard</h2>
             <p className="text-slate-500 mt-1">Manage your perishable stock and monitor expirations.</p>
           </div>
-          <button className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm shadow-rose-200">
+          <button 
+            onClick={handleOpenModal}
+            className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm shadow-rose-200"
+          >
             + Receive New Batch
           </button>
         </div>
@@ -63,7 +158,7 @@ function App() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500">Total Active Batches</p>
-              <p className="text-2xl font-bold text-slate-900">24</p>
+              <p className="text-2xl font-bold text-slate-900">{batches.length}</p>
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -71,8 +166,10 @@ function App() {
               <AlertCircle className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Expiring Soon (48h)</p>
-              <p className="text-2xl font-bold text-slate-900">3</p>
+              <p className="text-sm font-medium text-slate-500">Low Stock / Urgent</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {batches.filter(b => b.quantity < 100).length}
+              </p>
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -80,11 +177,24 @@ function App() {
               <CalendarDays className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Avg. Shelf Life</p>
-              <p className="text-2xl font-bold text-slate-900">4.2 Days</p>
+              <p className="text-sm font-medium text-slate-500">System Status</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {error ? 'Offline' : 'Online'}
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Error State */}
+        {error && (
+          <div className="mb-8 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
+            </div>
+            <button onClick={fetchBatches} className="text-sm font-medium underline">Retry</button>
+          </div>
+        )}
 
         {/* Inventory Table */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -110,40 +220,155 @@ function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {MOCK_BATCHES.map((batch) => (
-                  <tr key={batch.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs text-slate-400">#{batch.id}</td>
-                    <td className="px-6 py-4 font-medium text-slate-900">{batch.product}</td>
-                    <td className="px-6 py-4 text-slate-500">{batch.sku}</td>
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-700">{batch.quantity}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4 text-slate-400" />
-                        <span className={batch.expiryDate === '2026-08-11' ? 'text-rose-600 font-medium' : 'text-slate-600'}>
-                          {batch.expiryDate}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
-                          batch.status === 'ACTIVE'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        {batch.status}
-                      </span>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                      Loading inventory...
                     </td>
                   </tr>
-                ))}
+                ) : batches.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                      No active batches found in the system.
+                    </td>
+                  </tr>
+                ) : (
+                  batches.map((batch) => (
+                    <tr key={batch.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-mono text-xs text-slate-400" title={batch.id}>
+                        #{batch.id.substring(0,8)}...
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-900">{batch.product}</td>
+                      <td className="px-6 py-4 text-slate-500">{batch.sku}</td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-slate-700">{batch.quantity}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4 text-slate-400" />
+                          <span className="text-slate-600">{batch.expiryDate}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                            batch.status === 'ACTIVE'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          {batch.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
+
+      {/* Receive Batch Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">Receive New Batch</h3>
+              <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+                  <select 
+                    name="productId"
+                    value={formData.productId}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-rose-200"
+                    required
+                  >
+                    {products.length === 0 && <option value="">Loading products...</option>}
+                    {products.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Supplier Name</label>
+                  <input
+                    type="text"
+                    name="supplierName"
+                    value={formData.supplierName}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Dutch Farms Ltd"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-rose-200"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      min="1"
+                      value={formData.quantity}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-rose-200"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Unit Price ($)</label>
+                    <input
+                      type="number"
+                      name="purchasePrice"
+                      step="0.01"
+                      min="0.01"
+                      value={formData.purchasePrice}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-rose-200"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Expiry Date</label>
+                  <input
+                    type="date"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-rose-200"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm shadow-rose-200"
+                >
+                  Save Batch
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
