@@ -6,6 +6,7 @@ import com.bloomboard.backend.repository.BouquetRepository;
 import com.bloomboard.backend.repository.OrderAllocationRepository;
 import com.bloomboard.backend.repository.OrderItemRepository;
 import com.bloomboard.backend.repository.OrderRepository;
+import com.bloomboard.backend.repository.ProductRepository;
 import com.bloomboard.backend.service.dto.BatchAllocationResult;
 import com.bloomboard.backend.service.dto.CheckoutItem;
 import com.bloomboard.backend.service.dto.CheckoutRequest;
@@ -29,6 +30,7 @@ public class OrderService {
     private final BouquetRepository bouquetRepository;
     private final BatchRepository batchRepository;
     
+    private final ProductRepository productRepository;
     private final InventoryService inventoryService;
     private final ReservationService reservationService;
 
@@ -38,7 +40,12 @@ public class OrderService {
         
         Map<UUID, Integer> reservedProducts = reservationService.getReservation(request.cartId());
         if (reservedProducts.isEmpty()) {
-            throw new IllegalStateException("Cart reservation expired or not found");
+            log.info("No pre-existing Redis reservation found for cart {}, creating instant 10m reservation", request.cartId());
+            for (CheckoutItem item : request.items()) {
+                if (item.productId() != null) {
+                    reservationService.reserveProduct(request.cartId(), item.productId(), item.quantity(), 10);
+                }
+            }
         }
 
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -70,9 +77,9 @@ public class OrderService {
                     allocateAndDeduct(bi.getProduct().getId(), totalRawProductNeeded, orderItem);
                 }
             } else if (itemRequest.productId() != null) {
-                // Wait, need ProductRepository if we want to set Product on OrderItem. 
-                // But since we allocate, it's fine. We don't strictly set Product entity if not needed, 
-                // actually we should. But for this logic let's keep it simple.
+                Product product = productRepository.findById(itemRequest.productId())
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found: " + itemRequest.productId()));
+                orderItem.setProduct(product);
                 orderItem = orderItemRepository.save(orderItem);
                 allocateAndDeduct(itemRequest.productId(), itemRequest.quantity(), orderItem);
             } else {

@@ -60,6 +60,7 @@ public class InventoryController {
 
         return BatchResponse.builder()
                 .id(batch.getId())
+                .productId(batch.getProduct().getId())
                 .product(batch.getProduct().getName())
                 .sku(batch.getProduct().getSku())
                 .quantity(batch.getQuantityAvailable())

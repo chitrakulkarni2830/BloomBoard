@@ -14,7 +14,7 @@ import java.util.UUID;
 @Repository
 public interface BatchRepository extends JpaRepository<Batch, UUID> {
     
-    @Query("SELECT b FROM Batch b WHERE b.product.id = :productId AND b.status = 'ACTIVE' AND b.quantityAvailable > 0 AND b.expiryDate > :currentDate ORDER BY b.expiryDate ASC")
+    @Query("SELECT b FROM Batch b WHERE b.product.id = :productId AND b.status = 'ACTIVE' AND b.quantityAvailable > 0 AND b.expiryDate >= :currentDate ORDER BY b.expiryDate ASC")
     List<Batch> findActiveBatchesForProductOrderByExpiry(
             @Param("productId") UUID productId, 
             @Param("currentDate") LocalDateTime currentDate

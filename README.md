@@ -37,6 +37,16 @@ Customers browse live flower stock with real-time freshness badges and 50% disco
 
 Integrated cart drawer allowing customers to review items and place orders. Stock is atomically allocated from the oldest batches via FEFO logic.
 
+### 💳 PayMock (Mock Razorpay) Payment Gateway Modal
+![PayMock Gateway](docs/images/customer_paymock_gateway.png)
+
+Interactive payment gateway modal connected directly to PayMock server (`http://localhost:5001/api/payments`) supporting instant UPI (`alice@okaxis`) and Credit/Debit Card verification.
+
+### 🎉 Order Confirmation & FEFO Receipt
+![Order Receipt](docs/images/customer_order_receipt.png)
+
+Printable order confirmation receipt displaying the BloomBoard Order ID, PayMock Payment ID (`SSrqBkb0o...`), delivery address, total amount paid, and verified FEFO stock allocation.
+
 ### 🌿 Florist Management Portal (`ROLE_ADMIN`)
 ![Florist Dashboard](docs/images/florist_dashboard.png)
 

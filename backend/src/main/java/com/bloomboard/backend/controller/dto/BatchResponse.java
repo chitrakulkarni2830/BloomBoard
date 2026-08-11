@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 public class BatchResponse {
     private UUID id;
+    private UUID productId;
     private String product;
     private String sku;
     private Integer quantity;
