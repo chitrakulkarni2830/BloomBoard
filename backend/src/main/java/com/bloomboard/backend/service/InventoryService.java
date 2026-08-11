@@ -3,6 +3,9 @@ package com.bloomboard.backend.service;
 import com.bloomboard.backend.domain.Batch;
 import com.bloomboard.backend.repository.BatchRepository;
 import com.bloomboard.backend.service.dto.BatchAllocationResult;
+import com.bloomboard.backend.controller.dto.ReceiveBatchRequest;
+import com.bloomboard.backend.domain.Product;
+import com.bloomboard.backend.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import java.util.UUID;
 public class InventoryService {
 
     private final BatchRepository batchRepository;
+    private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
     public BatchAllocationResult allocateFefo(UUID productId, int quantityRequired) {
@@ -72,5 +76,35 @@ public class InventoryService {
         }
         batchRepository.saveAll(expiredBatches);
         log.info("Finished markExpiredBatches. Updated {} batches.", expiredBatches.size());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Batch> getAllActiveBatches() {
+        return batchRepository.findAllActiveBatchesWithProductOrderByExpiryDateAsc();
+    }
+
+    @Transactional
+    public Batch receiveNewBatch(ReceiveBatchRequest request) {
+        log.info("Receiving new batch for product id: {}", request.getProductId());
+        
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + request.getProductId()));
+
+        Batch batch = new Batch();
+        batch.setProduct(product);
+        batch.setSupplierName(request.getSupplierName());
+        batch.setQuantityInitial(request.getQuantity());
+        batch.setQuantityAvailable(request.getQuantity());
+        batch.setPurchasePrice(request.getPurchasePrice());
+        batch.setReceivedDate(LocalDateTime.now());
+        batch.setExpiryDate(request.getExpiryDate());
+        batch.setStatus(Batch.BatchStatus.ACTIVE);
+
+        return batchRepository.save(batch);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
     }
 }

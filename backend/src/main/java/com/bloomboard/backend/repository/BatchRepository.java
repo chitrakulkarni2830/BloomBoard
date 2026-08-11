@@ -21,4 +21,7 @@ public interface BatchRepository extends JpaRepository<Batch, UUID> {
     );
     
     List<Batch> findByStatusAndExpiryDateBefore(BatchStatus status, LocalDateTime date);
+
+    @Query("SELECT b FROM Batch b JOIN FETCH b.product WHERE b.status = 'ACTIVE' ORDER BY b.expiryDate ASC")
+    List<Batch> findAllActiveBatchesWithProductOrderByExpiryDateAsc();
 }
