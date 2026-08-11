@@ -188,9 +188,10 @@ const Login = ({ onLoginSuccess }) => {
               : 'Sign In'}
           </button>
 
-          <p style={{ marginTop: 16, textAlign: 'center', fontSize: 12, color: 'var(--text-faint)' }}>
-            Default: <strong style={{ color: 'var(--text-muted)' }}>admin</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong>
-          </p>
+          <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: 'var(--text-faint)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span>Florist Admin: <strong style={{ color: 'var(--text-muted)' }}>admin</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
+            <span>Customer Shop: <strong style={{ color: 'var(--text-muted)' }}>alice</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
+          </div>
         </form>
       </div>
     </div>
