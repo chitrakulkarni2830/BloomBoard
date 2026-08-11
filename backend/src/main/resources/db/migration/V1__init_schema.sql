@@ -62,7 +62,6 @@ CREATE TABLE order_allocations (
     quantity_allocated INT NOT NULL
 );
 
--- Indexes for performance
 CREATE INDEX idx_batches_product_expiry ON batches(product_id, expiry_date);
 CREATE INDEX idx_order_items_order ON order_items(order_id);
 CREATE INDEX idx_order_allocations_item ON order_allocations(order_item_id);

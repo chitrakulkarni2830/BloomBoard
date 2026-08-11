@@ -21,15 +21,6 @@ public class InventoryService {
 
     private final BatchRepository batchRepository;
 
-    /**
-     * Allocates stock for a given product based on FEFO (First-Expiring, First-Out).
-     * This method calculates the allocation but does NOT automatically save to DB.
-     * The calling OrderService will persist the updated batches and create OrderAllocations.
-     *
-     * @param productId The ID of the product to allocate
-     * @param quantityRequired The total quantity needed
-     * @return BatchAllocationResult containing the allocation map or an error if insufficient stock
-     */
     @Transactional(readOnly = true)
     public BatchAllocationResult allocateFefo(UUID productId, int quantityRequired) {
         log.info("Attempting FEFO allocation for product {} - quantity needed: {}", productId, quantityRequired);
@@ -62,8 +53,6 @@ public class InventoryService {
         }
 
         if (remainingToAllocate > 0) {
-            // This should theoretically not be hit due to the totalAvailable check, 
-            // but is a safe guard against race conditions if readOnly isn't strictly locking.
             return new BatchAllocationResult(false, null, "Failed to allocate complete quantity due to concurrent stock changes.");
         }
 
@@ -71,12 +60,7 @@ public class InventoryService {
         return new BatchAllocationResult(true, allocationMap, null);
     }
 
-    /**
-     * Scheduled job to automatically mark expired active batches as EXPIRED.
-     * Runs every hour.
-     */
     @Transactional
-    // @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 * * * *") // Uncomment when scheduling is enabled
     public void markExpiredBatches() {
         log.info("Running scheduled job: markExpiredBatches");
         List<Batch> expiredBatches = batchRepository.findByStatusAndExpiryDateBefore(
