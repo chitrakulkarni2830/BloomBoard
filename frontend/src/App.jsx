@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Package, Search, AlertCircle, ShoppingCart, X } from 'lucide-react';
+import { CalendarDays, Package, Search, AlertCircle, ShoppingCart, X, LogOut } from 'lucide-react';
+import Login from './Login';
 
 function App() {
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [userRole, setUserRole] = useState(localStorage.getItem('role'));
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,13 +24,19 @@ function App() {
 
   const fetchBatches = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/inventory/batches');
+      const response = await fetch('http://localhost:8080/api/inventory/batches', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.status === 401) {
+        handleLogout();
+        throw new Error('Session expired');
+      }
       if (!response.ok) throw new Error('Failed to fetch batches');
       const data = await response.json();
       setBatches(data);
       setError(null);
     } catch (err) {
-      setError('Could not connect to server. Is the backend running?');
+      setError(err.message || 'Could not connect to server.');
     } finally {
       setLoading(false);
     }
@@ -35,7 +44,9 @@ function App() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/inventory/products');
+      const response = await fetch('http://localhost:8080/api/inventory/products', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -49,9 +60,29 @@ function App() {
   };
 
   useEffect(() => {
-    fetchBatches();
-    fetchProducts();
-  }, []);
+    if (token) {
+      fetchBatches();
+      fetchProducts();
+    }
+  }, [token]);
+
+  const handleLoginSuccess = (newToken, username, role) => {
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('role', role);
+    setToken(newToken);
+    setUserRole(role);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    setToken(null);
+    setUserRole(null);
+  };
+
+  if (!token) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -89,7 +120,10 @@ function App() {
 
       const response = await fetch('http://localhost:8080/api/inventory/batches', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(payload)
       });
 
@@ -126,11 +160,20 @@ function App() {
               <ShoppingCart className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
             </button>
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Florist"
-              alt="User profile"
-              className="w-8 h-8 rounded-full border border-slate-200 bg-slate-100"
-            />
+            <button 
+              onClick={handleLogout}
+              className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors flex items-center gap-2"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 text-slate-500" />
+            </button>
+            <div className="flex items-center gap-2 ml-2">
+              <img
+                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                alt="User profile"
+                className="w-8 h-8 rounded-full border border-slate-200 bg-slate-100"
+              />
+            </div>
           </div>
         </div>
       </header>
