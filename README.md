@@ -30,17 +30,22 @@ BloomBoard is a full-stack, production-ready floral inventory and order manageme
 ### 🌸 Customer Flower Storefront (`ROLE_CUSTOMER`)
 ![Customer Storefront](docs/images/customer_real_flowers.png)
 
-Customers browse live flower stock presented with high-resolution botanical photography cards, real-time freshness badges, and 50% discount tags on near-expiry blooms.
+Customers browse live flower stock presented with studio-grade botanical photography, real-time freshness badges, and 50% discount tags on near-expiry blooms.
 
-### 📍 Auto-Detect Location Integration
-![Location Detection](docs/images/customer_location_detection.png)
+### 📦 Customer "My Orders" & 4-Stage Status Tracker
+![Customer Order Timeline](docs/images/customer_order_timeline_otp.png)
 
-One-click Geolocation auto-detection (`navigator.geolocation` with reverse geocoding via OpenStreetMap) automatically populates delivery street address, city, and pincode.
+Real-time order tracker displaying a 4-stage visual timeline (`Confirmed` ➔ `Packing` ➔ `Out for Delivery` ➔ `Delivered`) along with a secure 6-digit **Delivery Verification OTP** card.
 
-### 📦 Customer "My Orders" History
-![My Orders](docs/images/customer_my_orders.png)
+### 💐 Florist Back-Office Live Orders Panel (`ROLE_ADMIN`)
+![Florist Orders Management](docs/images/florist_orders_management.png)
 
-Slide-over drawer displaying customer order history fetched live from PostgreSQL database, complete with Order ID, Delivery Date, Amount Paid, and `CONFIRMED` status badge.
+Dedicated **"Live Customer Orders"** tab in the Florist Portal (`FloristApp.jsx`). Florist admins can view incoming customer orders in real-time, click **"Accept Order"**, **"Mark Packed"**, **"Dispatch / Ship"**, and verify delivery OTPs.
+
+### 🔑 Florist & Customer Delivery OTP Verification Modal
+![Florist Verify OTP Modal](docs/images/florist_verify_otp_modal.png)
+
+Secure 6-digit OTP verification modal allowing delivery executives or customers to confirm order handover, atomically transitioning order status to `DELIVERED`.
 
 ### 💳 PayMock (Mock Razorpay) Payment Gateway Modal
 ![PayMock Gateway](docs/images/customer_paymock_gateway.png)

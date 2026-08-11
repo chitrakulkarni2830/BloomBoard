@@ -38,6 +38,60 @@ function getFlowerImage(name) {
   return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80';
 }
 
+function OrderStatusTimeline({ status }) {
+  const stages = [
+    { key: 'CONFIRMED', label: 'Confirmed' },
+    { key: 'ACCEPTED', label: 'Packing' },
+    { key: 'SHIPPED', label: 'Out for Delivery' },
+    { key: 'DELIVERED', label: 'Delivered' },
+  ];
+
+  const getActiveIndex = (st) => {
+    if (st === 'CONFIRMED') return 0;
+    if (st === 'ACCEPTED' || st === 'PACKED') return 1;
+    if (st === 'SHIPPED') return 2;
+    if (st === 'DELIVERED') return 3;
+    return 0;
+  };
+
+  const activeIdx = getActiveIndex(status);
+
+  return (
+    <div style={{ margin: '14px 0 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '0 4px' }}>
+      <div style={{ position: 'absolute', top: 12, left: 16, right: 16, height: 3, background: '#E2E8F0', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: 12, left: 16, width: `${(activeIdx / 3) * 88}%`, height: 3, background: 'var(--c5)', zIndex: 0, transition: 'width 0.4s ease' }} />
+
+      {stages.map((stage, idx) => {
+        const isDone = idx <= activeIdx;
+        const isCurrent = idx === activeIdx;
+        return (
+          <div key={stage.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1 }}>
+            <div style={{
+              width: 24,
+              height: 24,
+              borderRadius: 999,
+              background: isDone ? 'var(--c5)' : '#FFFFFF',
+              border: isDone ? '2px solid var(--c5)' : '2px solid #CBD5E1',
+              color: isDone ? '#FFFFFF' : '#94A3B8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 10,
+              fontWeight: 800,
+              boxShadow: isCurrent ? '0 0 0 4px rgba(255,97,97,0.25)' : 'none'
+            }}>
+              {isDone ? '✓' : idx + 1}
+            </div>
+            <span style={{ fontSize: 10, fontWeight: isCurrent ? 800 : 600, color: isCurrent ? 'var(--c5)' : 'var(--text-muted)', marginTop: 4, textAlign: 'center' }}>
+              {stage.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function CustomerApp({ token, username, onLogout }) {
   const [batches, setBatches] = useState([]);
   const [products, setProducts] = useState([]);
@@ -53,6 +107,12 @@ export default function CustomerApp({ token, username, onLogout }) {
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [myOrders, setMyOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Customer OTP modal state
+  const [customerOtpModalOrder, setCustomerOtpModalOrder] = useState(null);
+  const [customerInputOtp, setCustomerInputOtp] = useState('');
+  const [customerOtpError, setCustomerOtpError] = useState('');
+  const [verifyingCustomerOtp, setVerifyingCustomerOtp] = useState(false);
 
   // Multi-step Checkout state: 'cart' | 'delivery' | 'paymock' | 'receipt'
   const [checkoutStep, setCheckoutStep] = useState('cart');
@@ -172,8 +232,7 @@ export default function CustomerApp({ token, username, onLogout }) {
   const fetchMyOrders = async () => {
     setLoadingOrders(true);
     try {
-      const email = `${username || 'alice'}@bloomboard.shop`;
-      const res = await fetch(`http://localhost:8080/api/v1/orders/my-orders?email=${encodeURIComponent(email)}`, {
+      const res = await fetch(`http://localhost:8080/api/v1/orders/my-orders?email=${encodeURIComponent(username || 'alice')}@bloomboard.shop`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -181,9 +240,42 @@ export default function CustomerApp({ token, username, onLogout }) {
         setMyOrders(data);
       }
     } catch (err) {
-      console.error('Failed to fetch past orders', err);
+      console.error('fetchMyOrders error:', err);
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  const handleCustomerVerifyOtpSubmit = async (e) => {
+    e.preventDefault();
+    if (!customerOtpModalOrder || !customerInputOtp.trim()) return;
+
+    setVerifyingCustomerOtp(true);
+    setCustomerOtpError('');
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/orders/${customerOtpModalOrder.orderId}/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ otp: customerInputOtp })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Invalid Delivery OTP');
+      }
+
+      setCustomerOtpModalOrder(null);
+      setCustomerInputOtp('');
+      await fetchMyOrders();
+      alert('🎉 Order Delivered & Verified! Thank you for ordering from BloomBoard!');
+    } catch (err) {
+      setCustomerOtpError(err.message || 'Verification failed');
+    } finally {
+      setVerifyingCustomerOtp(false);
     }
   };
 
@@ -783,12 +875,18 @@ export default function CustomerApp({ token, username, onLogout }) {
                             #{ord.orderId.substring(0, 14)}…
                           </p>
                         </div>
-                        <span className="badge badge-active">
+                        <span className={
+                          ord.status === 'DELIVERED' ? 'badge badge-active' :
+                          ord.status === 'SHIPPED' ? 'badge' : 'badge-discount'
+                        }>
                           {ord.status}
                         </span>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                      {/* 4-Stage Visual Status Timeline */}
+                      <OrderStatusTimeline status={ord.status} />
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12, color: 'var(--text-muted)', marginTop: 10 }}>
                         <div>
                           <span>Delivery Date:</span>
                           <p style={{ fontWeight: 600, color: 'var(--text)', margin: '2px 0 0' }}>
@@ -802,6 +900,32 @@ export default function CustomerApp({ token, username, onLogout }) {
                           </p>
                         </div>
                       </div>
+
+                      {/* Delivery Verification OTP Banner */}
+                      {ord.deliveryOtp && ord.status !== 'DELIVERED' && (
+                        <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '10px 14px', marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <span style={{ fontSize: 11, color: '#0369A1', fontWeight: 700, textTransform: 'uppercase' }}>Delivery Verification OTP</span>
+                            <p style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 800, color: '#0284C7', margin: '2px 0 0', letterSpacing: '2px' }}>
+                              {ord.deliveryOtp}
+                            </p>
+                            <span style={{ fontSize: 11, color: '#64748B' }}>Share with delivery agent upon arrival</span>
+                          </div>
+
+                          <button
+                            onClick={() => { setCustomerOtpModalOrder(ord); setCustomerInputOtp(''); setCustomerOtpError(''); }}
+                            style={{ background: '#0284C7', color: '#FFFFFF', border: 'none', borderRadius: 6, padding: '8px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(2,132,199,0.3)' }}
+                          >
+                            Confirm Receipt 🔑
+                          </button>
+                        </div>
+                      )}
+
+                      {ord.status === 'DELIVERED' && (
+                        <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--sage-bg)', color: 'var(--sage)', borderRadius: 6, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <CheckCircle2 size={16} /> Order Delivered & Verified via OTP
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1096,6 +1220,7 @@ export default function CustomerApp({ token, username, onLogout }) {
                     <ArrowLeft size={15} /> Back to Cart
                   </button>
                   <button
+                    id="btn-proceed-paymock"
                     type="button"
                     className="btn-primary"
                     onClick={() => setCheckoutStep('paymock')}
@@ -1299,6 +1424,7 @@ export default function CustomerApp({ token, username, onLogout }) {
                   </button>
 
                   <button
+                    id="btn-paymock-submit"
                     type="submit"
                     disabled={isProcessingPayment}
                     style={{
@@ -1400,6 +1526,53 @@ export default function CustomerApp({ token, username, onLogout }) {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOMER VERIFY OTP MODAL ── */}
+      {customerOtpModalOrder && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setCustomerOtpModalOrder(null)}>
+          <div className="modal-card" style={{ maxWidth: 420 }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg, #0284C7, #0369A1)', color: '#FFFFFF' }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ShieldCheck size={20} /> Confirm Delivery Receipt
+              </h3>
+              <span style={{ fontSize: 12, opacity: 0.85 }}>Order #{customerOtpModalOrder.orderId.substring(0, 10)}…</span>
+            </div>
+
+            <form onSubmit={handleCustomerVerifyOtpSubmit} style={{ padding: 24 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
+                Enter your 6-digit Delivery OTP (or the code from your delivery agent) to complete delivery:
+              </p>
+
+              <div style={{ marginBottom: 16 }}>
+                <input
+                  type="text"
+                  maxLength="6"
+                  className="field-input"
+                  placeholder="Enter 6-digit OTP"
+                  value={customerInputOtp}
+                  onChange={e => setCustomerInputOtp(e.target.value)}
+                  style={{ textAlign: 'center', fontSize: 22, letterSpacing: '4px', fontWeight: 800, fontFamily: 'monospace' }}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {customerOtpError && (
+                <div style={{ background: 'var(--crimson-bg)', color: 'var(--crimson)', padding: 10, borderRadius: 8, fontSize: 12, marginBottom: 16 }}>
+                  {customerOtpError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <button type="button" className="btn-ghost" onClick={() => setCustomerOtpModalOrder(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={verifyingCustomerOtp} style={{ background: '#0284C7' }}>
+                  {verifyingCustomerOtp ? 'Verifying...' : 'Verify OTP & Mark Delivered 🎉'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

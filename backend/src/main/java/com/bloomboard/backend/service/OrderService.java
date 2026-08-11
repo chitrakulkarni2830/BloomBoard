@@ -59,6 +59,11 @@ public class OrderService {
         order.setStatus(Order.OrderStatus.CONFIRMED);
         order.setTotalAmount(totalAmount);
         order.setDeliveryDate(request.deliveryDate());
+        
+        // Generate 6-digit Delivery OTP
+        String otp = String.format("%06d", (int) (Math.random() * 900000) + 100000);
+        order.setDeliveryOtp(otp);
+
         Order savedOrder = orderRepository.save(order);
 
         for (CheckoutItem itemRequest : request.items()) {
@@ -96,6 +101,32 @@ public class OrderService {
 
     public List<Order> getOrdersForCustomer(String email) {
         return orderRepository.findByCustomerEmailOrderByCreatedAtDesc(email);
+    }
+
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .toList();
+    }
+
+    public Order updateOrderStatus(UUID orderId, Order.OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        order.setStatus(newStatus);
+        return orderRepository.save(order);
+    }
+
+    public boolean verifyDeliveryOtp(UUID orderId, String inputOtp) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        
+        if (order.getDeliveryOtp() != null && order.getDeliveryOtp().equals(inputOtp.trim())) {
+            order.setStatus(Order.OrderStatus.DELIVERED);
+            orderRepository.save(order);
+            log.info("Order {} successfully delivered via OTP verification!", orderId);
+            return true;
+        }
+        return false;
     }
 
     private void allocateAndDeduct(UUID productId, int quantity, OrderItem orderItem) {

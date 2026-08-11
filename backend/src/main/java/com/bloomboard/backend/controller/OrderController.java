@@ -53,12 +53,46 @@ public class OrderController {
                         o.getStatus().name(),
                         o.getTotalAmount(),
                         o.getDeliveryDate() != null ? o.getDeliveryDate().toString() : null,
-                        o.getCreatedAt() != null ? o.getCreatedAt().toString() : null
+                        o.getCreatedAt() != null ? o.getCreatedAt().toString() : null,
+                        o.getDeliveryOtp()
                 ))
                 .toList();
         return ResponseEntity.ok(responseList);
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<CustomerOrderResponse>> getAllOrders() {
+        List<CustomerOrderResponse> responseList = orderService.getAllOrders().stream()
+                .map(o -> new CustomerOrderResponse(
+                        o.getId(),
+                        o.getStatus().name(),
+                        o.getTotalAmount(),
+                        o.getDeliveryDate() != null ? o.getDeliveryDate().toString() : null,
+                        o.getCreatedAt() != null ? o.getCreatedAt().toString() : null,
+                        o.getDeliveryOtp()
+                ))
+                .toList();
+        return ResponseEntity.ok(responseList);
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<OrderResponse> updateStatus(@PathVariable UUID id, @RequestParam Order.OrderStatus status) {
+        Order updated = orderService.updateOrderStatus(id, status);
+        return ResponseEntity.ok(new OrderResponse(updated.getId(), updated.getStatus().name()));
+    }
+
+    @PostMapping("/{id}/verify-otp")
+    public ResponseEntity<OtpResponse> verifyOtp(@PathVariable UUID id, @RequestBody OtpRequest request) {
+        boolean verified = orderService.verifyDeliveryOtp(id, request.otp());
+        if (verified) {
+            return ResponseEntity.ok(new OtpResponse(true, "Order delivered successfully!"));
+        } else {
+            return ResponseEntity.badRequest().body(new OtpResponse(false, "Invalid Delivery OTP code."));
+        }
+    }
     
     public record OrderResponse(UUID orderId, String status) {}
-    public record CustomerOrderResponse(UUID orderId, String status, java.math.BigDecimal totalAmount, String deliveryDate, String createdAt) {}
+    public record CustomerOrderResponse(UUID orderId, String status, java.math.BigDecimal totalAmount, String deliveryDate, String createdAt, String deliveryOtp) {}
+    public record OtpRequest(String otp) {}
+    public record OtpResponse(boolean success, String message) {}
 }

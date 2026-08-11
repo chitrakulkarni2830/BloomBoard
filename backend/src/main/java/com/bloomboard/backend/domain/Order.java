@@ -37,11 +37,14 @@ public class Order {
     
     @Column(name = "delivery_date")
     private LocalDateTime deliveryDate;
+
+    @Column(name = "delivery_otp")
+    private String deliveryOtp;
     
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
     
     public enum OrderStatus {
-        PENDING, CONFIRMED, FULFILLED, CANCELLED
+        PENDING, CONFIRMED, ACCEPTED, PACKED, SHIPPED, DELIVERED, FULFILLED, CANCELLED
     }
 }
