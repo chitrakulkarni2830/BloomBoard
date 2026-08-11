@@ -2,39 +2,40 @@ import React, { useState, useEffect } from 'react';
 import {
   ShoppingCart, Search, LogOut, CheckCircle2,
   Sparkles, X, Plus, Minus, AlertCircle, Trash2,
-  CreditCard, Smartphone, ShieldCheck, MapPin, Calendar, User, Phone, FileText, Check, ArrowRight, ArrowLeft
+  CreditCard, Smartphone, ShieldCheck, MapPin, Calendar, User, Phone, FileText, Check, ArrowRight, ArrowLeft,
+  Navigation, Package, Clock
 } from 'lucide-react';
 
 const PETALS = ['🌸','🌺','🌼','🌻','🌹','💐','🌷','🏵️','🌸','🌼'];
 
-const FLOWER_EMOJI = {
-  'Rose':           '🌹',
-  'Lily':           '🌷',
-  'Orchid':         '🌸',
-  'Carnation':      '💮',
-  'Gerbera':        '🌺',
-  'Tulip':          '🌷',
-  'Chrysanthemum':  '🌸',
-  'Sunflower':      '🌻',
-  'Anthurium':      '🌺',
-  'Gladiolus':      '🌷',
-  'Alstroemeria':   '🌼',
-  'Iris':           '💜',
-  'Lisianthus':     '🌸',
-  'Ranunculus':     '🌸',
-  'Peony':          '🌸',
-  'Bird of Paradise': '🌾',
-  'Freesia':        '🌼',
-  'Stock Flower':   '🌿',
-  'Snapdragon':     '🌷',
-  'Hydrangea':      '💠',
+const FLOWER_IMAGES = {
+  'Rose':           'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
+  'Lily':           'https://images.unsplash.com/photo-1588695886940-d9819280d9ee?auto=format&fit=crop&w=600&q=80',
+  'Orchid':         'https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=600&q=80',
+  'Carnation':      'https://images.unsplash.com/photo-1554631221-f9603e6808be?auto=format&fit=crop&w=600&q=80',
+  'Gerbera':        'https://images.unsplash.com/photo-1508610048659-a06b669e3321?auto=format&fit=crop&w=600&q=80',
+  'Tulip':          'https://images.unsplash.com/photo-1520763185298-1b434c919102?auto=format&fit=crop&w=600&q=80',
+  'Chrysanthemum':  'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80',
+  'Sunflower':      'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=600&q=80',
+  'Anthurium':      'https://images.unsplash.com/photo-1602615576820-ea14b9e77d28?auto=format&fit=crop&w=600&q=80',
+  'Gladiolus':      'https://images.unsplash.com/photo-1589217157232-4a29e20b6846?auto=format&fit=crop&w=600&q=80',
+  'Alstroemeria':   'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=600&q=80',
+  'Iris':           'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=600&q=80',
+  'Lisianthus':     'https://images.unsplash.com/photo-1533616688419-b7a585564566?auto=format&fit=crop&w=600&q=80',
+  'Ranunculus':     'https://images.unsplash.com/photo-1566835154388-b2a608d249f1?auto=format&fit=crop&w=600&q=80',
+  'Peony':          'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=600&q=80',
+  'Bird of Paradise': 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?auto=format&fit=crop&w=600&q=80',
+  'Freesia':        'https://images.unsplash.com/photo-1519378304606-27b43f5c678a?auto=format&fit=crop&w=600&q=80',
+  'Stock Flower':   'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=600&q=80',
+  'Snapdragon':     'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80',
+  'Hydrangea':      'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80',
 };
 
-function flowerEmoji(name) {
-  for (const [k, v] of Object.entries(FLOWER_EMOJI)) {
+function getFlowerImage(name) {
+  for (const [k, v] of Object.entries(FLOWER_IMAGES)) {
     if (name.includes(k)) return v;
   }
-  return '🌸';
+  return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80';
 }
 
 export default function CustomerApp({ token, username, onLogout }) {
@@ -48,6 +49,11 @@ export default function CustomerApp({ token, username, onLogout }) {
   const [cart, setCart] = useState({});
   const [isCartOpen, setIsCartOpen] = useState(false);
   
+  // My Orders state
+  const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
+  const [myOrders, setMyOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
   // Multi-step Checkout state: 'cart' | 'delivery' | 'paymock' | 'receipt'
   const [checkoutStep, setCheckoutStep] = useState('cart');
 
@@ -62,6 +68,63 @@ export default function CustomerApp({ token, username, onLogout }) {
     deliveryDate: tomorrowStr,
     notes: 'Please hand deliver to recipient or leave with security.'
   });
+
+  // Location detection state
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationStatus, setLocationStatus] = useState('');
+
+  const detectLocation = () => {
+    setIsDetectingLocation(true);
+    setLocationStatus('Locating device…');
+
+    if (!navigator.geolocation) {
+      setTimeout(() => {
+        setDeliveryForm(p => ({ ...p, streetAddress: '100 Feet Road, Indiranagar', city: 'Bengaluru', pincode: '560038' }));
+        setLocationStatus('📍 Detected: Indiranagar, Bengaluru (560038)');
+        setIsDetectingLocation(false);
+      }, 600);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          setLocationStatus('Fetching address details…');
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const street = addr.road || addr.suburb || addr.neighbourhood || 'Lotus Garden Lane';
+            const city = addr.city || addr.town || addr.state_district || 'Bengaluru';
+            const pincode = addr.postcode || '560034';
+
+            setDeliveryForm(prev => ({
+              ...prev,
+              streetAddress: `${street}, ${addr.suburb || 'Koramangala'}`,
+              city: city,
+              pincode: pincode
+            }));
+            setLocationStatus(`📍 Detected: ${city} (${pincode})`);
+          } else {
+            setDeliveryForm(prev => ({ ...prev, streetAddress: '77 Residency Road, Ashok Nagar', city: 'Bengaluru', pincode: '560025' }));
+            setLocationStatus('📍 Detected: Bengaluru (560025)');
+          }
+        } catch (err) {
+          setDeliveryForm(prev => ({ ...prev, streetAddress: '77 Residency Road, Ashok Nagar', city: 'Bengaluru', pincode: '560025' }));
+          setLocationStatus('📍 Detected: Bengaluru (560025)');
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      () => {
+        setIsDetectingLocation(false);
+        setDeliveryForm(prev => ({ ...prev, streetAddress: '100 Feet Road, Indiranagar', city: 'Bengaluru', pincode: '560038' }));
+        setLocationStatus('📍 Detected: Indiranagar, Bengaluru (560038)');
+      },
+      { timeout: 8000 }
+    );
+  };
 
   // PayMock payment gateway state
   const [payMethod, setPayMethod] = useState('UPI'); // 'UPI' | 'Card'
@@ -103,6 +166,24 @@ export default function CustomerApp({ token, username, onLogout }) {
       setError(err.message || 'Could not connect to store catalog.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMyOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const email = `${username || 'alice'}@bloomboard.shop`;
+      const res = await fetch(`http://localhost:8080/api/v1/orders/my-orders?email=${encodeURIComponent(email)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMyOrders(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch past orders', err);
+    } finally {
+      setLoadingOrders(false);
     }
   };
 
@@ -193,8 +274,11 @@ export default function CustomerApp({ token, username, onLogout }) {
   const cartItems = Object.values(cart);
   const cartTotalItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-  const deliveryFee = cartSubtotal > 500 || cartSubtotal === 0 ? 0 : 50;
+  
+  // FREE Delivery threshold updated to ₹200 as requested!
+  const deliveryFee = cartSubtotal >= 200 || cartSubtotal === 0 ? 0 : 50;
   const grandTotal = cartSubtotal + deliveryFee;
+  const amountNeededForFreeShipping = Math.max(0, 200 - cartSubtotal);
 
   // Process payment with PayMock server (port 5001), then place FEFO order in BloomBoard (port 8080)
   const handlePayMockSubmit = async (e) => {
@@ -290,6 +374,7 @@ export default function CustomerApp({ token, username, onLogout }) {
         items: [...cartItems],
         delivery: { ...deliveryForm }
       });
+
       setCheckoutStep('receipt');
       setCart({});
       fetchCatalog(); // Refresh live stock
@@ -341,8 +426,8 @@ export default function CustomerApp({ token, username, onLogout }) {
             <span className="badge badge-active" style={{ marginLeft: 4 }}>Boutique Shop</span>
           </div>
 
-          {/* Search & Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Search, Location & Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div className="search-wrap">
               <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)', pointerEvents: 'none' }} />
               <input
@@ -353,6 +438,30 @@ export default function CustomerApp({ token, username, onLogout }) {
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
+
+            {/* Detect Location Button */}
+            <button
+              id="btn-detect-location-header"
+              onClick={detectLocation}
+              disabled={isDetectingLocation}
+              className="btn-ghost"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13 }}
+              title="Auto-detect location"
+            >
+              <Navigation size={15} color="var(--c5)" className={isDetectingLocation ? 'spin' : ''} />
+              <span>{isDetectingLocation ? 'Locating...' : 'Detect Location'}</span>
+            </button>
+
+            {/* My Orders Drawer Button */}
+            <button
+              id="btn-my-orders"
+              onClick={() => { fetchMyOrders(); setIsMyOrdersOpen(true); }}
+              className="btn-ghost"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', fontSize: 13 }}
+            >
+              <Package size={16} color="var(--c3)" />
+              <span>My Orders</span>
+            </button>
 
             {/* Shopping Cart Button */}
             <button
@@ -431,13 +540,19 @@ export default function CustomerApp({ token, username, onLogout }) {
               Explore 20 freshly cut varieties. Our dynamic FEFO algorithm ensures premium freshness, with special 50% discounts on near-expiry blooms!
             </p>
 
-            <div style={{ display: 'flex', gap: 12, fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
+            <div style={{ display: 'flex', gap: 14, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, flexWrap: 'wrap' }}>
               <span>✓ 100% Freshness Guarantee</span>
               <span>•</span>
-              <span>✓ Same-Day Express Delivery</span>
+              <span style={{ color: 'var(--c5)' }}>⚡ FREE Express Delivery on Orders &gt; ₹200</span>
               <span>•</span>
               <span>✓ PayMock Gateway Ready</span>
             </div>
+
+            {locationStatus && (
+              <div style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: 'var(--c3)', background: 'rgba(154,178,224,0.2)', padding: '6px 14px', borderRadius: 999, display: 'inline-block' }}>
+                {locationStatus}
+              </div>
+            )}
           </div>
 
           <div style={{
@@ -473,11 +588,11 @@ export default function CustomerApp({ token, username, onLogout }) {
           </div>
         )}
 
-        {/* Flower Cards Grid */}
+        {/* Flower Cards Grid with Real High-Res Photography */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 20 }}>
           {loading ? (
             [...Array(8)].map((_, i) => (
-              <div key={i} className="card skeleton" style={{ height: 280, borderRadius: 'var(--radius-lg)' }} />
+              <div key={i} className="card skeleton" style={{ height: 320, borderRadius: 'var(--radius-lg)' }} />
             ))
           ) : filteredCatalog.length === 0 ? (
             <div style={{ colSpan: 'all', padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -488,13 +603,15 @@ export default function CustomerApp({ token, username, onLogout }) {
             filteredCatalog.map((item, idx) => {
               const inCart = cart[item.product];
               const effectivePrice = item.isDiscounted ? item.basePrice * 0.5 : item.basePrice;
+              const flowerImageUrl = getFlowerImage(item.product);
 
               return (
                 <div
                   key={item.product}
                   className="card"
                   style={{
-                    padding: 22,
+                    padding: 0,
+                    overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -503,82 +620,102 @@ export default function CustomerApp({ token, username, onLogout }) {
                     position: 'relative'
                   }}
                 >
-                  {/* Top Badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  {/* Real Flower Image Card Header */}
+                  <div style={{ position: 'relative', width: '100%', height: 180, overflow: 'hidden' }}>
+                    <img
+                      src={flowerImageUrl}
+                      alt={item.product}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80';
+                      }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transition: 'transform 0.5s ease',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    />
+
+                    {/* Gradient Overlay */}
                     <div style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 16,
-                      background: 'linear-gradient(135deg, var(--c1), var(--c2))',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 28,
-                      boxShadow: 'var(--shadow-sm)'
-                    }}>
-                      {flowerEmoji(item.product)}
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)'
+                    }} />
+
+                    {/* Discount / Freshness Badge */}
+                    <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
+                      {item.isDiscounted ? (
+                        <span className="badge-discount" style={{ boxShadow: '0 4px 12px rgba(255,97,97,0.4)' }}>⚡ 50% OFF</span>
+                      ) : (
+                        <span className="badge badge-active" style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }}>Fresh Stock</span>
+                      )}
                     </div>
 
-                    {item.isDiscounted ? (
-                      <span className="badge-discount">⚡ 50% OFF</span>
-                    ) : (
-                      <span className="badge badge-active">Fresh Stock</span>
-                    )}
+                    {/* Flower Name overlay */}
+                    <div style={{ position: 'absolute', bottom: 12, left: 16, right: 16, zIndex: 2 }}>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: '#FFFFFF', textShadow: '0 2px 6px rgba(0,0,0,0.6)', margin: 0 }}>
+                        {item.product}
+                      </h3>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>SKU: {item.sku}</span>
+                    </div>
                   </div>
 
-                  {/* Product Details */}
-                  <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-                      {item.product}
-                    </h3>
-                    <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 10 }}>SKU: {item.sku}</p>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span>In Stock:</span> <strong style={{ color: 'var(--text)' }}>{item.totalQty.toLocaleString()} stems</strong>
-                    </p>
-                  </div>
+                  {/* Body Content */}
+                  <div style={{ padding: 18, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
+                    <div style={{ marginBottom: 14 }}>
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>Available Quantity:</span>
+                        <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{item.totalQty.toLocaleString()} stems</strong>
+                      </p>
+                    </div>
 
-                  {/* Price & Cart Control */}
-                  <div style={{ paddingTop: 14, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div>
-                      <span style={{ fontSize: 11, color: 'var(--text-faint)', display: 'block' }}>Price per stem</span>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--c5)' }}>
-                          ₹{effectivePrice.toFixed(2)}
-                        </span>
-                        {item.isDiscounted && (
-                          <span style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'line-through' }}>
-                            ₹{item.basePrice.toFixed(2)}
+                    {/* Price & Cart Control */}
+                    <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <span style={{ fontSize: 11, color: 'var(--text-faint)', display: 'block' }}>Price per stem</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--c5)' }}>
+                            ₹{effectivePrice.toFixed(2)}
                           </span>
-                        )}
+                          {item.isDiscounted && (
+                            <span style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'line-through' }}>
+                              ₹{item.basePrice.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {inCart ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--c1)', borderRadius: 'var(--radius-md)', padding: 3, border: '1px solid var(--border)' }}>
+                      {inCart ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--c1)', borderRadius: 'var(--radius-md)', padding: 3, border: '1px solid var(--border)' }}>
+                          <button
+                            onClick={() => updateCartQty(item.product, inCart.quantity - 1)}
+                            style={{ border: 'none', background: 'var(--surface)', borderRadius: 6, width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span style={{ fontSize: 13, fontWeight: 700, minWidth: 20, textAlign: 'center' }}>{inCart.quantity}</span>
+                          <button
+                            onClick={() => updateCartQty(item.product, inCart.quantity + 1)}
+                            style={{ border: 'none', background: 'var(--surface)', borderRadius: 6, width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => updateCartQty(item.product, inCart.quantity - 1)}
-                          style={{ border: 'none', background: 'var(--surface)', borderRadius: 6, width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          id={`btn-add-${item.product.toLowerCase().replace(/\s+/g, '-')}`}
+                          onClick={() => addToCart(item, 1)}
+                          className="btn-primary"
+                          style={{ padding: '8px 16px', fontSize: 13 }}
                         >
-                          <Minus size={12} />
+                          ＋ Add
                         </button>
-                        <span style={{ fontSize: 13, fontWeight: 700, minWidth: 20, textAlign: 'center' }}>{inCart.quantity}</span>
-                        <button
-                          onClick={() => updateCartQty(item.product, inCart.quantity + 1)}
-                          style={{ border: 'none', background: 'var(--surface)', borderRadius: 6, width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        id={`btn-add-${item.product.toLowerCase().replace(/\s+/g, '-')}`}
-                        onClick={() => addToCart(item, 1)}
-                        className="btn-primary"
-                        style={{ padding: '8px 14px', fontSize: 13 }}
-                      >
-                        ＋ Add
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -587,7 +724,100 @@ export default function CustomerApp({ token, username, onLogout }) {
         </div>
       </main>
 
-      {/* ── Multi-Step Checkout Modal ── */}
+      {/* ── MY ORDERS DRAWER ── */}
+      {isMyOrdersOpen && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setIsMyOrdersOpen(false)}>
+          <div className="modal-card" style={{ maxWidth: 500 }}>
+            <div style={{
+              background: 'linear-gradient(135deg, var(--c1), var(--c2))',
+              padding: '20px 24px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Package size={22} color="var(--c5)" />
+                <div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: 0 }}>
+                    My Past Orders
+                  </h3>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    Customer: {username}@bloomboard.shop
+                  </span>
+                </div>
+              </div>
+              <button className="btn-icon" onClick={() => setIsMyOrdersOpen(false)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: 24, maxHeight: 440, overflowY: 'auto' }}>
+              {loadingOrders ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: 24 }}>⏳</span>
+                  <p style={{ marginTop: 8 }}>Fetching order history…</p>
+                </div>
+              ) : myOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: 42 }}>📦</span>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginTop: 12 }}>No past orders found.</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Place your first order to see history here!</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {myOrders.map(ord => (
+                    <div
+                      key={ord.orderId}
+                      style={{
+                        background: 'var(--c1)',
+                        border: '1.5px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: 16
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+                        <div>
+                          <span style={{ fontSize: 11, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Order Reference</span>
+                          <p style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--c3)', margin: 0, fontSize: 13 }}>
+                            #{ord.orderId.substring(0, 14)}…
+                          </p>
+                        </div>
+                        <span className="badge badge-active">
+                          {ord.status}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                        <div>
+                          <span>Delivery Date:</span>
+                          <p style={{ fontWeight: 600, color: 'var(--text)', margin: '2px 0 0' }}>
+                            {ord.deliveryDate ? ord.deliveryDate.split('T')[0] : 'Standard'}
+                          </p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span>Total Paid:</span>
+                          <p style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--c5)', margin: '2px 0 0' }}>
+                            ₹{ord.totalAmount ? ord.totalAmount.toFixed(2) : '0.00'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--c1)', textAlign: 'right' }}>
+              <button className="btn-primary" onClick={() => setIsMyOrdersOpen(false)} style={{ padding: '8px 20px', fontSize: 13 }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MULTI-STEP CHECKOUT MODAL ── */}
       {isCartOpen && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && resetModalState()}>
           <div className="modal-card" style={{ maxWidth: checkoutStep === 'paymock' ? 480 : 460 }}>
@@ -639,6 +869,27 @@ export default function CustomerApp({ token, username, onLogout }) {
             {checkoutStep === 'cart' && (
               <>
                 <div style={{ padding: 24, maxHeight: 380, overflowY: 'auto' }}>
+                  {/* Free Delivery Threshold Banner (₹200) */}
+                  <div style={{
+                    background: deliveryFee === 0 ? 'var(--sage-bg)' : '#FFF7ED',
+                    border: deliveryFee === 0 ? '1px solid var(--sage)' : '1px solid #FFEDD5',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    fontSize: 12,
+                    color: deliveryFee === 0 ? 'var(--sage)' : '#C2410C',
+                    marginBottom: 16,
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>
+                      {deliveryFee === 0 
+                        ? '🎉 You unlocked FREE Express Delivery!' 
+                        : `Add ₹${amountNeededForFreeShipping.toFixed(2)} more to get FREE Express Delivery (Orders > ₹200)`}
+                    </span>
+                  </div>
+
                   {cartItems.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--text-muted)' }}>
                       <span style={{ fontSize: 42 }}>🧺</span>
@@ -657,13 +908,17 @@ export default function CustomerApp({ token, username, onLogout }) {
                             background: 'var(--c1)',
                             border: '1px solid var(--border)',
                             borderRadius: 'var(--radius-md)',
-                            padding: '12px 16px'
+                            padding: '10px 14px'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: 24 }}>{flowerEmoji(ci.product)}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <img
+                              src={getFlowerImage(ci.product)}
+                              alt={ci.product}
+                              style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }}
+                            />
                             <div>
-                              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{ci.product}</p>
+                              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', margin: 0 }}>{ci.product}</p>
                               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                                 ₹{ci.unitPrice.toFixed(2)} × {ci.quantity} stems
                               </span>
@@ -695,7 +950,7 @@ export default function CustomerApp({ token, username, onLogout }) {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
                       <span>Express Delivery Fee</span>
-                      <span>{deliveryFee === 0 ? <strong style={{ color: 'var(--sage)' }}>FREE</strong> : `₹${deliveryFee}`}</span>
+                      <span>{deliveryFee === 0 ? <strong style={{ color: 'var(--sage)' }}>FREE (&gt; ₹200)</strong> : `₹${deliveryFee}`}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, paddingTop: 10, borderTop: '1px dashed var(--border)' }}>
                       <span style={{ fontSize: 14, fontWeight: 700 }}>Total Payable</span>
@@ -719,6 +974,37 @@ export default function CustomerApp({ token, username, onLogout }) {
             {/* ── STEP 2: DELIVERY DETAILS ── */}
             {checkoutStep === 'delivery' && (
               <div style={{ padding: 24 }}>
+                {/* Location Detection Banner */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(154,178,224,0.2), rgba(255,233,233,0.3))',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 16px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Navigation size={18} color="var(--c5)" className={isDetectingLocation ? 'spin' : ''} />
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Auto-Detect Location</span>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                        {locationStatus || 'Use device GPS to auto-fill address'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    disabled={isDetectingLocation}
+                    className="btn-ghost"
+                    style={{ padding: '6px 12px', fontSize: 12 }}
+                  >
+                    {isDetectingLocation ? 'Detecting...' : '📍 Detect Now'}
+                  </button>
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>

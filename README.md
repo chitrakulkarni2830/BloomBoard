@@ -28,14 +28,19 @@ BloomBoard is a full-stack, production-ready floral inventory and order manageme
 ## 📸 Screenshots
 
 ### 🌸 Customer Flower Storefront (`ROLE_CUSTOMER`)
-![Customer Storefront](docs/images/customer_storefront.png)
+![Customer Storefront](docs/images/customer_real_flowers.png)
 
-Customers browse live flower stock with real-time freshness badges and 50% discount tags on near-expiry blooms.
+Customers browse live flower stock presented with high-resolution botanical photography cards, real-time freshness badges, and 50% discount tags on near-expiry blooms.
 
-### 🧺 Customer Shopping Basket & FEFO Checkout
-![Customer Cart](docs/images/customer_cart.png)
+### 📍 Auto-Detect Location Integration
+![Location Detection](docs/images/customer_location_detection.png)
 
-Integrated cart drawer allowing customers to review items and place orders. Stock is atomically allocated from the oldest batches via FEFO logic.
+One-click Geolocation auto-detection (`navigator.geolocation` with reverse geocoding via OpenStreetMap) automatically populates delivery street address, city, and pincode.
+
+### 📦 Customer "My Orders" History
+![My Orders](docs/images/customer_my_orders.png)
+
+Slide-over drawer displaying customer order history fetched live from PostgreSQL database, complete with Order ID, Delivery Date, Amount Paid, and `CONFIRMED` status badge.
 
 ### 💳 PayMock (Mock Razorpay) Payment Gateway Modal
 ![PayMock Gateway](docs/images/customer_paymock_gateway.png)

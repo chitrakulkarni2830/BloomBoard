@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -91,6 +92,10 @@ public class OrderService {
         log.info("Successfully processed order {} for cart {}", savedOrder.getId(), request.cartId());
         
         return savedOrder;
+    }
+
+    public List<Order> getOrdersForCustomer(String email) {
+        return orderRepository.findByCustomerEmailOrderByCreatedAtDesc(email);
     }
 
     private void allocateAndDeduct(UUID productId, int quantity, OrderItem orderItem) {

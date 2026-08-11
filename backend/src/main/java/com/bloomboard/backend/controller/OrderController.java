@@ -44,6 +44,21 @@ public class OrderController {
         OrderResponse response = new OrderResponse(completedOrder.getId(), completedOrder.getStatus().name());
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/my-orders")
+    public ResponseEntity<List<CustomerOrderResponse>> getMyOrders(@RequestParam String email) {
+        List<CustomerOrderResponse> responseList = orderService.getOrdersForCustomer(email).stream()
+                .map(o -> new CustomerOrderResponse(
+                        o.getId(),
+                        o.getStatus().name(),
+                        o.getTotalAmount(),
+                        o.getDeliveryDate() != null ? o.getDeliveryDate().toString() : null,
+                        o.getCreatedAt() != null ? o.getCreatedAt().toString() : null
+                ))
+                .toList();
+        return ResponseEntity.ok(responseList);
+    }
     
     public record OrderResponse(UUID orderId, String status) {}
+    public record CustomerOrderResponse(UUID orderId, String status, java.math.BigDecimal totalAmount, String deliveryDate, String createdAt) {}
 }
