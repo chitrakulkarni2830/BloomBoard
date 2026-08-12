@@ -41,7 +41,7 @@ public class OrderController {
 
         Order completedOrder = orderService.processCheckout(serviceRequest);
         
-        OrderResponse response = new OrderResponse(completedOrder.getId(), completedOrder.getStatus().name());
+        OrderResponse response = new OrderResponse(completedOrder.getId(), completedOrder.getStatus().name(), completedOrder.getDeliveryOtp());
         return ResponseEntity.ok(response);
     }
 
@@ -78,7 +78,7 @@ public class OrderController {
     @PutMapping("/{id}/status")
     public ResponseEntity<OrderResponse> updateStatus(@PathVariable UUID id, @RequestParam Order.OrderStatus status) {
         Order updated = orderService.updateOrderStatus(id, status);
-        return ResponseEntity.ok(new OrderResponse(updated.getId(), updated.getStatus().name()));
+        return ResponseEntity.ok(new OrderResponse(updated.getId(), updated.getStatus().name(), updated.getDeliveryOtp()));
     }
 
     @PostMapping("/{id}/verify-otp")
@@ -91,7 +91,7 @@ public class OrderController {
         }
     }
     
-    public record OrderResponse(UUID orderId, String status) {}
+    public record OrderResponse(UUID orderId, String status, String deliveryOtp) {}
     public record CustomerOrderResponse(UUID orderId, String status, java.math.BigDecimal totalAmount, String deliveryDate, String createdAt, String deliveryOtp) {}
     public record OtpRequest(String otp) {}
     public record OtpResponse(boolean success, String message) {}

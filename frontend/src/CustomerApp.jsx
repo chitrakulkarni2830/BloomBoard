@@ -459,6 +459,7 @@ export default function CustomerApp({ token, username, onLogout }) {
       setCompletedOrder({
         orderId: orderData.orderId,
         orderStatus: orderData.status,
+        deliveryOtp: orderData.deliveryOtp,
         paymockId: verifiedPayment.paymentId,
         paymockStatus: verifiedPayment.status,
         merchantName: verifiedPayment.merchantName,
@@ -1507,6 +1508,42 @@ export default function CustomerApp({ token, username, onLogout }) {
                       {completedOrder.delivery.streetAddress}, {completedOrder.delivery.city} - {completedOrder.delivery.pincode}
                     </p>
                   </div>
+
+                  {/* Delivery Verification OTP Banner */}
+                  {completedOrder.deliveryOtp && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+                      border: '1.5px solid #7DD3FC',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      marginBottom: 14,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ textAlign: 'left' }}>
+                        <span style={{ fontSize: 11, color: '#0369A1', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          🔑 Delivery Verification OTP
+                        </span>
+                        <p style={{ fontSize: 11, color: '#475569', margin: '2px 0 0' }}>
+                          Share this code with your delivery agent
+                        </p>
+                      </div>
+                      <div style={{
+                        background: '#0284C7',
+                        color: '#FFFFFF',
+                        fontFamily: 'monospace',
+                        fontSize: 20,
+                        fontWeight: 800,
+                        letterSpacing: '3px',
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        boxShadow: '0 2px 8px rgba(2,132,199,0.3)'
+                      }}>
+                        {completedOrder.deliveryOtp}
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px dashed var(--border)' }}>
                     <span>Total Amount Paid</span>
