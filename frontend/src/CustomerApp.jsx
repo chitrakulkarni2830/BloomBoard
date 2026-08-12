@@ -471,6 +471,7 @@ export default function CustomerApp({ token, username, onLogout }) {
       setCheckoutStep('receipt');
       setCart({});
       fetchCatalog(); // Refresh live stock
+      fetchMyOrders(); // Refresh customer order history and OTPs
     } catch (err) {
       alert(err.message || 'Payment processing failed.');
     } finally {
@@ -902,29 +903,39 @@ export default function CustomerApp({ token, username, onLogout }) {
                         </div>
                       </div>
 
-                      {/* Delivery Verification OTP Banner */}
-                      {ord.deliveryOtp && ord.status !== 'DELIVERED' && (
-                        <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '10px 14px', marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <span style={{ fontSize: 11, color: '#0369A1', fontWeight: 700, textTransform: 'uppercase' }}>Delivery Verification OTP</span>
-                            <p style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 800, color: '#0284C7', margin: '2px 0 0', letterSpacing: '2px' }}>
-                              {ord.deliveryOtp}
-                            </p>
-                            <span style={{ fontSize: 11, color: '#64748B' }}>Share with delivery agent upon arrival</span>
+                      {/* Zomato-style Doorstep Delivery OTP Card - ONLY when rider triggers OTP at doorstep */}
+                      {ord.status !== 'DELIVERED' && ord.otpTriggered && (
+                        <div style={{ background: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)', color: '#FFFFFF', borderRadius: 10, padding: '14px 16px', marginTop: 12, boxShadow: '0 4px 14px rgba(2,132,199,0.35)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                            <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#BAE6FD' }}>
+                              🛵 Rider at your Doorstep!
+                            </span>
+                            <span style={{ fontSize: 11, background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 12 }}>Live</span>
                           </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <p style={{ fontSize: 12, margin: 0, opacity: 0.9 }}>Share this OTP with delivery rider:</p>
+                              <p style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 900, letterSpacing: '4px', margin: '2px 0 0', color: '#FFFFFF' }}>
+                                {ord.deliveryOtp}
+                              </p>
+                            </div>
+                            <span style={{ fontSize: 28 }}>🔑</span>
+                          </div>
+                        </div>
+                      )}
 
-                          <button
-                            onClick={() => { setCustomerOtpModalOrder(ord); setCustomerInputOtp(''); setCustomerOtpError(''); }}
-                            style={{ background: '#0284C7', color: '#FFFFFF', border: 'none', borderRadius: 6, padding: '8px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(2,132,199,0.3)' }}
-                          >
-                            Confirm Receipt 🔑
-                          </button>
+                      {ord.status !== 'DELIVERED' && !ord.otpTriggered && (
+                        <div style={{ marginTop: 10, padding: '10px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#475569', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>🛵</span>
+                          <span>
+                            {ord.status === 'SHIPPED' ? 'Delivery rider is on the way. OTP will appear when rider arrives at doorstep.' : 'Order being prepared. OTP will appear when rider arrives at doorstep.'}
+                          </span>
                         </div>
                       )}
 
                       {ord.status === 'DELIVERED' && (
                         <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--sage-bg)', color: 'var(--sage)', borderRadius: 6, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <CheckCircle2 size={16} /> Order Delivered & Verified via OTP
+                          <CheckCircle2 size={16} /> Order Delivered & Handover Verified via OTP
                         </div>
                       )}
                     </div>
@@ -1509,41 +1520,19 @@ export default function CustomerApp({ token, username, onLogout }) {
                     </p>
                   </div>
 
-                  {/* Delivery Verification OTP Banner */}
-                  {completedOrder.deliveryOtp && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
-                      border: '1.5px solid #7DD3FC',
-                      borderRadius: 10,
-                      padding: '12px 16px',
-                      marginBottom: 14,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}>
-                      <div style={{ textAlign: 'left' }}>
-                        <span style={{ fontSize: 11, color: '#0369A1', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          🔑 Delivery Verification OTP
-                        </span>
-                        <p style={{ fontSize: 11, color: '#475569', margin: '2px 0 0' }}>
-                          Share this code with your delivery agent
-                        </p>
-                      </div>
-                      <div style={{
-                        background: '#0284C7',
-                        color: '#FFFFFF',
-                        fontFamily: 'monospace',
-                        fontSize: 20,
-                        fontWeight: 800,
-                        letterSpacing: '3px',
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        boxShadow: '0 2px 8px rgba(2,132,199,0.3)'
-                      }}>
-                        {completedOrder.deliveryOtp}
-                      </div>
-                    </div>
-                  )}
+                  {/* Delivery Verification OTP Note */}
+                  <div style={{
+                    background: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: 10,
+                    padding: '12px 16px',
+                    marginBottom: 14,
+                    fontSize: 12,
+                    color: '#475569',
+                    textAlign: 'center'
+                  }}>
+                    🚚 Your <strong>Delivery Verification OTP</strong> will be revealed in <strong>My Orders</strong> once your florist dispatches your package (Out for Delivery).
+                  </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px dashed var(--border)' }}>
                     <span>Total Amount Paid</span>

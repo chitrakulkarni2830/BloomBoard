@@ -116,9 +116,28 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public Order triggerDoorstepOtp(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        if (order.getStatus() != Order.OrderStatus.SHIPPED) {
+            throw new IllegalStateException("Doorstep OTP can only be triggered when rider is Out for Delivery (SHIPPED). Current status: " + order.getStatus());
+        }
+        order.setOtpTriggered(true);
+        log.info("Rider arrived at doorstep for order {}! OTP {} is now active for customer.", orderId, order.getDeliveryOtp());
+        return orderRepository.save(order);
+    }
+
     public boolean verifyDeliveryOtp(UUID orderId, String inputOtp) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        
+        if (order.getStatus() != Order.OrderStatus.SHIPPED) {
+            throw new IllegalStateException("Delivery OTP can only be verified when order is Out for Delivery (SHIPPED). Current status: " + order.getStatus());
+        }
+
+        if (!order.isOtpTriggered()) {
+            throw new IllegalStateException("Doorstep OTP has not been triggered by delivery agent yet.");
+        }
         
         if (order.getDeliveryOtp() != null && order.getDeliveryOtp().equals(inputOtp.trim())) {
             order.setStatus(Order.OrderStatus.DELIVERED);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Login from './Login';
 import FloristApp from './FloristApp';
 import CustomerApp from './CustomerApp';
+import DeliveryApp from './DeliveryApp';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -32,6 +33,10 @@ function App() {
 
   if (role === 'ROLE_ADMIN') {
     return <FloristApp token={token} username={username} onLogout={handleLogout} />;
+  }
+
+  if (role === 'ROLE_DELIVERY' || username === 'rider') {
+    return <DeliveryApp token={token} username={username} onLogout={handleLogout} />;
   }
 
   return <CustomerApp token={token} username={username} onLogout={handleLogout} />;

@@ -140,6 +140,19 @@ export default function FloristApp({ token, username, onLogout }) {
     }
   };
 
+  const handleTriggerDoorstepOtp = async (orderId) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/orders/${orderId}/trigger-otp`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to trigger doorstep OTP');
+      await fetchOrders();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleVerifyOtpSubmit = async (e) => {
     e.preventDefault();
     if (!otpModalOrder || !inputOtp.trim()) return;
@@ -511,13 +524,23 @@ export default function FloristApp({ token, username, onLogout }) {
                         </button>
                       )}
 
-                      {ord.status === 'SHIPPED' && (
+                      {ord.status === 'SHIPPED' && !ord.otpTriggered && (
+                        <button
+                          onClick={() => handleTriggerDoorstepOtp(ord.orderId)}
+                          className="btn-primary"
+                          style={{ padding: '8px 14px', fontSize: 12, background: 'linear-gradient(135deg, #0284C7, #0369A1)' }}
+                        >
+                          Arrived at Doorstep (Trigger OTP) 🛵
+                        </button>
+                      )}
+
+                      {ord.status === 'SHIPPED' && ord.otpTriggered && (
                         <button
                           onClick={() => { setOtpModalOrder(ord); setInputOtp(''); setOtpError(''); }}
                           className="btn-primary"
                           style={{ padding: '8px 14px', fontSize: 12, background: 'linear-gradient(135deg, #7C3AED, #6D28D9)' }}
                         >
-                          Verify Delivery OTP 🔑
+                          Enter Customer's OTP 🔑
                         </button>
                       )}
 

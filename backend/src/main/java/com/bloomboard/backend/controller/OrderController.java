@@ -54,7 +54,8 @@ public class OrderController {
                         o.getTotalAmount(),
                         o.getDeliveryDate() != null ? o.getDeliveryDate().toString() : null,
                         o.getCreatedAt() != null ? o.getCreatedAt().toString() : null,
-                        o.getDeliveryOtp()
+                        o.getDeliveryOtp(),
+                        o.isOtpTriggered()
                 ))
                 .toList();
         return ResponseEntity.ok(responseList);
@@ -69,10 +70,25 @@ public class OrderController {
                         o.getTotalAmount(),
                         o.getDeliveryDate() != null ? o.getDeliveryDate().toString() : null,
                         o.getCreatedAt() != null ? o.getCreatedAt().toString() : null,
-                        o.getDeliveryOtp()
+                        o.getDeliveryOtp(),
+                        o.isOtpTriggered()
                 ))
                 .toList();
         return ResponseEntity.ok(responseList);
+    }
+
+    @PostMapping("/{id}/trigger-otp")
+    public ResponseEntity<CustomerOrderResponse> triggerDoorstepOtp(@PathVariable UUID id) {
+        Order updated = orderService.triggerDoorstepOtp(id);
+        return ResponseEntity.ok(new CustomerOrderResponse(
+                updated.getId(),
+                updated.getStatus().name(),
+                updated.getTotalAmount(),
+                updated.getDeliveryDate() != null ? updated.getDeliveryDate().toString() : null,
+                updated.getCreatedAt() != null ? updated.getCreatedAt().toString() : null,
+                updated.getDeliveryOtp(),
+                updated.isOtpTriggered()
+        ));
     }
 
     @PutMapping("/{id}/status")
@@ -92,7 +108,7 @@ public class OrderController {
     }
     
     public record OrderResponse(UUID orderId, String status, String deliveryOtp) {}
-    public record CustomerOrderResponse(UUID orderId, String status, java.math.BigDecimal totalAmount, String deliveryDate, String createdAt, String deliveryOtp) {}
+    public record CustomerOrderResponse(UUID orderId, String status, java.math.BigDecimal totalAmount, String deliveryDate, String createdAt, String deliveryOtp, boolean otpTriggered) {}
     public record OtpRequest(String otp) {}
     public record OtpResponse(boolean success, String message) {}
 }
