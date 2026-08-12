@@ -3,9 +3,9 @@ spring:
     name: BloomBoard
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/bloomboard
-    username: myuser
-    password: mypassword
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bloomboard}
+    username: ${SPRING_DATASOURCE_USERNAME:myuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:mypassword}
     driver-class-name: org.postgresql.Driver
     
   jpa:
@@ -24,8 +24,7 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      url: ${REDIS_URL:redis://localhost:6379}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
