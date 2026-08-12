@@ -118,4 +118,70 @@ public class InventoryService {
         batch.setQuantityAvailable(0);
         batchRepository.save(batch);
     }
+
+    @Transactional
+    public String seedDatabaseIfEmpty() {
+        if (productRepository.count() > 0) {
+            return "Already seeded with " + productRepository.count() + " products and " + batchRepository.count() + " batches.";
+        }
+
+        log.info("Seeding initial products and fresh flower inventory batches...");
+
+        record ProductSeed(String sku, String name, String description, java.math.BigDecimal price, String supplier, int expiryDays) {}
+
+        List<ProductSeed> seedData = List.of(
+            new ProductSeed("FLW-ROSE", "Rose", "Fresh Crimson Red Dutch Roses", new java.math.BigDecimal("20.00"), "Bangalore Rose Gardens", 7),
+            new ProductSeed("FLW-PEONY", "Peony", "Lush Pink Double Peonies", new java.math.BigDecimal("280.00"), "Ooty Alpine Imports", 5),
+            new ProductSeed("FLW-TULIP", "Tulip", "Vibrant Dutch Yellow Tulips", new java.math.BigDecimal("150.00"), "Gultekdi Wholesale Pune", 6),
+            new ProductSeed("FLW-ORCHID", "Orchid", "Exotic Purple Mokara Orchids", new java.math.BigDecimal("55.00"), "Kerala Orchid Farms", 10),
+            new ProductSeed("FLW-LILY", "Lily", "Fragrant Stargazer Oriental Lilies", new java.math.BigDecimal("95.00"), "Mysore Lily Co", 8),
+            new ProductSeed("FLW-CARN", "Carnation", "Soft Pastel Pink Carnations", new java.math.BigDecimal("25.00"), "Mahabaleshwar Flora", 1),
+            new ProductSeed("FLW-GERB", "Gerbera", "Bright Orange Daisy Gerberas", new java.math.BigDecimal("20.00"), "Pune Agri Market", 6),
+            new ProductSeed("FLW-CHRY", "Chrysanthemum", "Golden Yellow Button Chrysanthemums", new java.math.BigDecimal("20.00"), "Satara Flower Syndicate", 9),
+            new ProductSeed("FLW-ANTH", "Anthurium", "Glossy Crimson Flamingo Anthuriums", new java.math.BigDecimal("50.00"), "Goa Tropical Blooms", 12),
+            new ProductSeed("FLW-HYDR", "Hydrangea", "Sky Blue Mophead Hydrangeas", new java.math.BigDecimal("180.00"), "Kodaikanal Valley Nursery", 5),
+            new ProductSeed("FLW-SNAP", "Snapdragon", "Tall Spike Pink Snapdragons", new java.math.BigDecimal("40.00"), "Nashik Floral Hub", 6),
+            new ProductSeed("FLW-RANU", "Ranunculus", "Layered Buttercup Ranunculus", new java.math.BigDecimal("75.00"), "Himachal Bloom Imports", 7),
+            new ProductSeed("FLW-BIRD", "Bird of Paradise", "Tropical Orange Strelitzia", new java.math.BigDecimal("85.00"), "Coorg Exotic Growers", 10),
+            new ProductSeed("FLW-FREE", "Freesia", "Aromatic White Freesia Stems", new java.math.BigDecimal("50.00"), "Sikkim Alpine Farms", 1),
+            new ProductSeed("FLW-GLAD", "Gladiolus", "Purple Sword-Lily Gladiolus", new java.math.BigDecimal("35.00"), "Solapur Gladiolus Co", 7),
+            new ProductSeed("FLW-IRIS", "Iris", "Deep Violet Blue Bearded Irises", new java.math.BigDecimal("65.00"), "Gultekdi Violet Market", 6),
+            new ProductSeed("FLW-LISI", "Lisianthus", "Rose-like Lavender Lisianthus", new java.math.BigDecimal("75.00"), "Lonavala Nursery", 8),
+            new ProductSeed("FLW-ALST", "Alstroemeria", "Peruvian Lilies with Striped Petals", new java.math.BigDecimal("40.00"), "Pune Botanical Hub", 7),
+            new ProductSeed("FLW-STCK", "Stock Flower", "Sweet Scented Cream Stock Flowers", new java.math.BigDecimal("45.00"), "Wai Cream Stock Farms", 6),
+            new ProductSeed("FLW-SUNF", "Sunflower", "Radiant Golden Pune Sunflowers", new java.math.BigDecimal("40.00"), "Solapur Sunfields", 7)
+        );
+
+        List<Product> productsToSave = new java.util.ArrayList<>();
+        for (ProductSeed seed : seedData) {
+            Product p = new Product();
+            p.setSku(seed.sku());
+            p.setName(seed.name());
+            p.setDescription(seed.description());
+            productsToSave.add(p);
+        }
+
+        List<Product> savedProducts = productRepository.saveAll(productsToSave);
+
+        List<Batch> batchesToSave = new java.util.ArrayList<>();
+        for (int i = 0; i < savedProducts.size(); i++) {
+            Product p = savedProducts.get(i);
+            ProductSeed seed = seedData.get(i);
+
+            Batch b = new Batch();
+            b.setProduct(p);
+            b.setSupplierName(seed.supplier());
+            b.setQuantityInitial(150);
+            b.setQuantityAvailable(150);
+            b.setPurchasePrice(seed.price());
+            b.setReceivedDate(LocalDateTime.now());
+            b.setExpiryDate(LocalDateTime.now().plusDays(seed.expiryDays()));
+            b.setStatus(Batch.BatchStatus.ACTIVE);
+            batchesToSave.add(b);
+        }
+
+        List<Batch> savedBatches = batchRepository.saveAll(batchesToSave);
+
+        return "Successfully seeded " + savedProducts.size() + " products and " + savedBatches.size() + " active inventory batches.";
+    }
 }

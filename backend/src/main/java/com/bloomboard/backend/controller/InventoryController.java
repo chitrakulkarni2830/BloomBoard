@@ -50,6 +50,18 @@ public class InventoryController {
         return inventoryService.getAllProducts();
     }
 
+    @PostMapping("/seed")
+    public ResponseEntity<String> seedInventoryPost() {
+        String msg = inventoryService.seedDatabaseIfEmpty();
+        return ResponseEntity.ok(msg);
+    }
+
+    @GetMapping("/seed")
+    public ResponseEntity<String> seedInventoryGet() {
+        String msg = inventoryService.seedDatabaseIfEmpty();
+        return ResponseEntity.ok(msg);
+    }
+
     private BatchResponse mapToBatchResponse(Batch batch) {
         // Dynamic discounting: discount if expiring in 48 hours or less
         boolean isDiscounted = false;
