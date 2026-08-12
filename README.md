@@ -5,7 +5,7 @@
 <h1 align="center">🌸 BloomBoard</h1>
 
 <p align="center">
-  <strong>Perishable Inventory & E-Commerce Platform for Florists and Customers</strong>
+  <strong>Perishable Inventory, Zomato-Style Delivery & E-Commerce Platform for Florists, Riders, and Customers</strong>
 </p>
 
 <p align="center">
@@ -19,48 +19,40 @@
 
 ---
 
-BloomBoard is a full-stack, production-ready floral inventory and order management platform designed specifically for time-sensitive, perishable inventory. It features a dual role-based interface:
-1. **Customer Flower Shop Storefront** (`ROLE_CUSTOMER`): A boutique shop where customers browse 20 fresh flower varieties, view stock & 50% discount tags on near-expiry blooms, build a basket, and check out with real-time FEFO allocation.
-2. **Florist Admin Management Portal** (`ROLE_ADMIN`): A clean, functional back-office dashboard for florists to track batch expirations, receive new shipments, and record stock waste.
+BloomBoard is a full-stack, production-ready floral inventory and order management platform designed specifically for time-sensitive, perishable inventory and instant delivery. It features a tri-role architecture:
+
+1. **Customer Flower Shop Storefront** (`ROLE_CUSTOMER`): A boutique storefront featuring 20 fresh flower varieties priced according to authentic Pune flower market rates, stock availability, 50% discount tags on near-expiry blooms, PayMock payment checkout, and live Zomato-style doorstep OTP notifications.
+2. **Florist Admin Management Portal** (`ROLE_ADMIN`): A back-office dashboard for florists to track batch expirations via FEFO, receive new shipments, record waste, and dispatch customer orders.
+3. **Delivery Partner Fleet App** (`ROLE_DELIVERY`): A mobile-optimized portal for delivery partners to manage active dispatches, trigger doorstep OTP alerts when arriving at customer locations, and complete handovers via 6-digit OTP verification.
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshots & Workflow
 
 ### 🌸 Customer Flower Storefront (`ROLE_CUSTOMER`)
-![Customer Storefront](docs/images/customer_real_flowers.png)
+![Customer Storefront](docs/images/pune_market_flower_catalog.png)
 
-Customers browse live flower stock presented with studio-grade botanical photography, real-time freshness badges, and 50% discount tags on near-expiry blooms.
+Customers browse live flower stock with botanical photography, Pune market pricing (Roses ₹20, Peonies ₹280, Tulips ₹150), freshness badges, and 50% discount tags.
 
-### 📦 Customer "My Orders" & 4-Stage Status Tracker
+### 🛵 Delivery Partner Fleet App (`ROLE_DELIVERY`)
+![Delivery Fleet App](docs/images/delivery_agent_fleet_app.png)
+
+Mobile-first portal for delivery executives (`rider` / `password`) featuring assigned tasks, doorstep arrival triggers, and earnings trackers.
+
+### 📦 Customer "My Orders" & Zomato-Style Doorstep OTP Card
 ![Customer Order Timeline](docs/images/customer_order_timeline_otp.png)
 
-Real-time order tracker displaying a 4-stage visual timeline (`Confirmed` ➔ `Packing` ➔ `Out for Delivery` ➔ `Delivered`) along with a secure 6-digit **Delivery Verification OTP** card.
+Order tracker displaying a 4-stage visual timeline (`Confirmed` ➔ `Packing` ➔ `Out for Delivery` ➔ `Delivered`) along with live Doorstep OTP alerts when the rider arrives.
 
-### 💐 Florist Back-Office Live Orders Panel (`ROLE_ADMIN`)
+### 💐 Florist Live Orders Panel (`ROLE_ADMIN`)
 ![Florist Orders Management](docs/images/florist_orders_management.png)
 
-Dedicated **"Live Customer Orders"** tab in the Florist Portal (`FloristApp.jsx`). Florist admins can view incoming customer orders in real-time, click **"Accept Order"**, **"Mark Packed"**, **"Dispatch / Ship"**, and verify delivery OTPs.
+Florist back-office panel to accept orders (`Accept Order 🌸`), mark packed (`Mark Packed 📦`), and dispatch shipments (`Dispatch / Ship 🚚`).
 
-### 🔑 Florist & Customer Delivery OTP Verification Modal
-![Florist Verify OTP Modal](docs/images/florist_verify_otp_modal.png)
-
-Secure 6-digit OTP verification modal allowing delivery executives or customers to confirm order handover, atomically transitioning order status to `DELIVERED`.
-
-### 💳 PayMock (Mock Razorpay) Payment Gateway Modal
+### 💳 PayMock Payment Gateway
 ![PayMock Gateway](docs/images/customer_paymock_gateway.png)
 
 Interactive payment gateway modal connected directly to PayMock server (`http://localhost:5001/api/payments`) supporting instant UPI (`alice@okaxis`) and Credit/Debit Card verification.
-
-### 🎉 Order Confirmation & FEFO Receipt
-![Order Receipt](docs/images/customer_order_receipt.png)
-
-Printable order confirmation receipt displaying the BloomBoard Order ID, PayMock Payment ID (`SSrqBkb0o...`), delivery address, total amount paid, and verified FEFO stock allocation.
-
-### 🌿 Florist Management Portal (`ROLE_ADMIN`)
-![Florist Dashboard](docs/images/florist_dashboard.png)
-
-Minimalist, efficient inventory table for florists to monitor batch expirations, receive stock, and record waste.
 
 ---
 
@@ -68,7 +60,8 @@ Minimalist, efficient inventory table for florists to monitor batch expirations,
 
 | Role | Username | Password | Access |
 |---|---|---|---|
-| **Florist Admin** | `admin` | `password` | Florist Inventory Management Portal |
+| **Florist Admin** | `admin` | `password` | Florist Inventory & Orders Management Portal |
+| **Delivery Agent** | `rider` | `password` | BloomBoard Fleet Mobile App |
 | **Customer** | `alice` | `password` | Customer Flower Shop Storefront |
 | **Customer** | `bob` | `password` | Customer Flower Shop Storefront |
 
@@ -78,12 +71,13 @@ Minimalist, efficient inventory table for florists to monitor batch expirations,
 
 | Feature | Description |
 |---|---|
-| **Dual Role UI** | Dynamic router presents a boutique storefront for customers and a streamlined back-office panel for florists |
-| **FEFO Engine** | Allocates stock using First-Expired-First-Out logic, automatically using the oldest batches first to minimize waste |
-| **Atomic Checkout** | Combines a PostgreSQL transaction with a Redis reservation in a single atomic operation — zero chance of overselling |
+| **Tri-Role System** | Dedicated UIs for Customers (`CustomerApp.jsx`), Florist Admins (`FloristApp.jsx`), and Delivery Partners (`DeliveryApp.jsx`) |
+| **FEFO Allocation Engine** | Automatically allocates stock using First-Expired-First-Out logic to minimize floral waste |
+| **Zomato-Style Doorstep OTP** | OTP is only revealed on customer's screen when rider triggers doorstep arrival; rider enters customer's OTP to confirm handover |
+| **Pune Market Pricing** | 20 flower varieties pre-loaded with authentic Pune flower market prices (Gultekdi rates) |
+| **Atomic Checkout** | PostgreSQL transaction + Redis reservation prevents overselling under heavy concurrency |
 | **Dynamic Discounting** | Batches expiring within 48 hours are automatically flagged (`isDiscounted: true`), giving customers 50% OFF |
-| **Waste Processing** | Florists can securely discard expired or unsellable batches with a single click, setting quantity to zero |
-| **JWT Security** | Stateless authentication using Spring Security + JWTs with role claims (`ROLE_ADMIN`, `ROLE_CUSTOMER`) |
+| **JWT Security** | Stateless authentication using Spring Security + JWTs with role claims (`ROLE_ADMIN`, `ROLE_DELIVERY`, `ROLE_CUSTOMER`) |
 
 ---
 
@@ -94,26 +88,26 @@ Minimalist, efficient inventory table for florists to monitor batch expirations,
                        │      Login Screen       │
                        └────────────┬────────────┘
                                     │ JWT Auth
-                      ┌─────────────┴─────────────┐
-                      ▼                           ▼
-        ┌───────────────────────────┐   ┌───────────────────────────┐
-        │    Customer Storefront    │   │   Florist Admin Portal    │
-        │      (ROLE_CUSTOMER)      │   │       (ROLE_ADMIN)        │
-        └─────────────┬─────────────┘   └─────────────┬─────────────┘
-                      │                               │
-                      └───────────────┬───────────────┘
-                                      │ REST API
-                      ┌───────────────▼───────────────┐
-                      │    Spring Boot 3 (Port 8080)   │
-                      │  InventoryService (FEFO)      │
-                      │  OrderService & Redis Locks   │
-                      └───────────────┬───────────────┘
-                                      │
-                         ┌────────────┴────────────┐
-                         ▼                         ▼
-                  ┌──────────────┐          ┌──────────────┐
-                  │  PostgreSQL  │          │    Redis     │
-                  └──────────────┘          └──────────────┘
+             ┌──────────────────────┼──────────────────────┐
+             ▼                      ▼                      ▼
+┌────────────────────────┐┌───────────────────┐┌────────────────────────┐
+│  Customer Storefront   ││Florist Admin Panel││ Delivery Executive App │
+│    (ROLE_CUSTOMER)     ││   (ROLE_ADMIN)    ││    (ROLE_DELIVERY)     │
+└────────────┬───────────┘└─────────┬─────────┘└───────────┬────────────┘
+             │                      │                      │
+             └──────────────────────┼──────────────────────┘
+                                    │ REST API
+                      ┌─────────────▼─────────────┐
+                      │ Spring Boot 3 (Port 8080) │
+                      │  InventoryService (FEFO)  │
+                      │  OrderService & Doorstep  │
+                      └─────────────┬─────────────┘
+                                    │
+                        ┌───────────┴───────────┐
+                        ▼                       ▼
+                 ┌──────────────┐        ┌──────────────┐
+                 │  PostgreSQL  │        │    Redis     │
+                 └──────────────┘        └──────────────┘
 ```
 
 ---
@@ -143,10 +137,10 @@ npm install
 npm run dev
 ```
 
-Navigate to `http://localhost:5173` to log in as either `admin` or `alice`!
+Navigate to `http://localhost:5173` to log in as `admin`, `rider`, or `alice`!
 
 ---
 
 ## 📄 License
 
-MIT License — built with ❤️ for florists and flower lovers everywhere.
+MIT License — built with ❤️ for florists, riders, and flower lovers everywhere.
