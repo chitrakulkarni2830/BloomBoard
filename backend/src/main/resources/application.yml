@@ -14,21 +14,22 @@ spring:
       max-lifetime: 300000
       connection-timeout: 30000
       keepalive-time: 0
+      connection-test-query: SELECT 1
     
   jpa:
     hibernate:
-      ddl-auto: validate
+      # 'none' skips schema validation at startup — avoids extra DB connections
+      # Schema is managed by Flyway migrations already applied in Supabase
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
         format_sql: false
         
   flyway:
-    enabled: true
-    baseline-on-migrate: true
-    out-of-order: true
-    repair-on-migrate: true
-    ignore-migration-patterns: "*:*"
+    # Migrations V1-V7 are already applied in Supabase.
+    # Disable Flyway to avoid startup connection exhaustion on Render free tier.
+    enabled: false
 
   data:
     redis:
