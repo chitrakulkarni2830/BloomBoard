@@ -19,6 +19,15 @@
 
 ---
 
+## 🌐 Live Demo
+
+- **Frontend (Vercel)**: [https://bloom-board-omega.vercel.app/](https://bloom-board-omega.vercel.app/)
+- **Backend API (Render)**: [https://bloomboard-ezlh.onrender.com/](https://bloomboard-ezlh.onrender.com/)
+
+> **Note:** The backend is hosted on a free-tier Render instance. If it has been inactive for a while, it may take 30–60 seconds to wake up when you first visit the site.
+
+---
+
 BloomBoard is a full-stack, production-ready floral inventory and order management platform designed specifically for time-sensitive, perishable inventory and instant delivery. It features a tri-role architecture:
 
 1. **Customer Flower Shop Storefront** (`ROLE_CUSTOMER`): A boutique storefront featuring 20 fresh flower varieties priced according to authentic Pune flower market rates, stock availability, 50% discount tags on near-expiry blooms, PayMock payment checkout, and live Zomato-style doorstep OTP notifications.
