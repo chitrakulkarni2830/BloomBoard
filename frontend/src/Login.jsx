@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Lock, User, AlertCircle, UserPlus, LogIn, Shield, Store, Truck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Lock, User, AlertCircle, UserPlus, LogIn, Shield, Store, Truck, RefreshCw } from 'lucide-react';
 import { API_BASE_URL } from './config';
 
 const PETALS = ['🌸','🌺','🌼','🌹','🌷','💐','🌸','🌺','🌼','🌻'];
+const LOGIN_TIMEOUT_MS = 15000;
 
 const Login = ({ onLoginSuccess }) => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -11,34 +12,103 @@ const Login = ({ onLoginSuccess }) => {
   const [selectedRole, setSelectedRole] = useState('ROLE_CUSTOMER');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isWakingUp, setIsWakingUp] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const retryTimerRef = useRef(null);
+  const lastPayloadRef = useRef(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    return () => { if (retryTimerRef.current) clearTimeout(retryTimerRef.current); };
+  }, []);
 
-    const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
-    const payload = isRegistering
-      ? { username, password, role: selectedRole }
-      : { username, password };
+  const attemptLogin = async (endpoint, payload) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
 
     try {
       const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || (isRegistering ? 'Registration failed. Try a different username.' : 'Invalid credentials. Please try again.'));
+        throw new Error(data.message || (payload.role ? 'Registration failed. Try a different username.' : 'Invalid credentials. Please try again.'));
       }
-
-      onLoginSuccess(data.token, data.username, data.role);
+      return { success: true, data };
     } catch (err) {
-      setError(err.message);
-    } finally {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError' || err.message === 'Failed to fetch') {
+        return { success: false, timedOut: true };
+      }
+      return { success: false, error: err.message };
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    setLoading(true);
+    setError(null);
+    setIsWakingUp(false);
+    setRetryCount(0);
+
+    const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+    const payload = isRegistering
+      ? { username, password, role: selectedRole }
+      : { username, password };
+    lastPayloadRef.current = { endpoint, payload };
+
+    const result = await attemptLogin(endpoint, payload);
+
+    if (result.success) {
       setLoading(false);
+      setIsWakingUp(false);
+      onLoginSuccess(result.data.token, result.data.username, result.data.role);
+    } else if (result.timedOut) {
+      setIsWakingUp(true);
+      setError(null);
+      scheduleRetry(endpoint, payload, 1);
+    } else {
+      setLoading(false);
+      setIsWakingUp(false);
+      setError(result.error);
+    }
+  };
+
+  const scheduleRetry = (endpoint, payload, count) => {
+    setRetryCount(count);
+    retryTimerRef.current = setTimeout(async () => {
+      const result = await attemptLogin(endpoint, payload);
+      if (result.success) {
+        setLoading(false);
+        setIsWakingUp(false);
+        onLoginSuccess(result.data.token, result.data.username, result.data.role);
+      } else if (result.timedOut) {
+        if (count < 8) {
+          scheduleRetry(endpoint, payload, count + 1);
+        } else {
+          setLoading(false);
+          setIsWakingUp(false);
+          setError('Backend is taking too long to wake up. Please refresh the page and try again in 1–2 minutes.');
+        }
+      } else {
+        setLoading(false);
+        setIsWakingUp(false);
+        setError(result.error);
+      }
+    }, 8000);
+  };
+
+  const handleManualRetry = () => {
+    if (lastPayloadRef.current) {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      const { endpoint, payload } = lastPayloadRef.current;
+      setRetryCount(0);
+      scheduleRetry(endpoint, payload, 1);
     }
   };
 
@@ -133,6 +203,47 @@ const Login = ({ onLoginSuccess }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: '24px 32px 28px' }}>
+          {isWakingUp && (
+            <div style={{
+              marginBottom: 16,
+              background: 'rgba(255, 167, 38, 0.12)',
+              border: '1px solid rgba(255, 167, 38, 0.4)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px 14px',
+              fontSize: 12,
+              color: '#b45309',
+              animation: 'fadeUp 0.2s ease',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ animation: 'leafSway 1s ease infinite', display: 'inline-block', fontSize: 16 }}>⏳</span>
+                <strong>Backend is waking up...</strong>
+              </div>
+              <p style={{ margin: 0, lineHeight: 1.5 }}>
+                This is a free-tier server — it sleeps after inactivity and takes <strong>~30–60 seconds</strong> to wake.
+                Auto-retrying… (attempt {retryCount}/8)
+              </p>
+              <button
+                type="button"
+                onClick={handleManualRetry}
+                style={{
+                  marginTop: 8,
+                  background: 'rgba(255,167,38,0.15)',
+                  border: '1px solid rgba(255,167,38,0.5)',
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  color: '#92400e',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <RefreshCw size={11} /> Retry now
+              </button>
+            </div>
+          )}
+
           {error && (
             <div style={{
               marginBottom: 16,
@@ -151,6 +262,7 @@ const Login = ({ onLoginSuccess }) => {
               <span>{error}</span>
             </div>
           )}
+
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {isRegistering && (
@@ -274,15 +386,17 @@ const Login = ({ onLoginSuccess }) => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isWakingUp}
             className="btn-primary"
             id="btn-login-submit"
-            style={{ width: '100%', justifyContent: 'center', marginTop: 20, padding: '12px', fontSize: 14 }}
+            style={{ width: '100%', justifyContent: 'center', marginTop: 20, padding: '12px', fontSize: 14, opacity: isWakingUp ? 0.7 : 1 }}
           >
-            {loading ? (
+            {isWakingUp ? (
+              <><span style={{ animation: 'leafSway 1s ease infinite', display: 'inline-block' }}>⏳</span>&nbsp; Waking server… (retry {retryCount}/8)</>
+            ) : loading ? (
               <><span style={{ animation: 'leafSway 0.8s ease infinite', display: 'inline-block' }}>🌸</span>&nbsp; {isRegistering ? 'Registering…' : 'Signing in…'}</>
             ) : (
-              isRegistering ? <><UserPlus size={16} /> Register & Sign In</> : <><LogIn size={16} /> Sign In</>
+              isRegistering ? <><UserPlus size={16} /> Register &amp; Sign In</> : <><LogIn size={16} /> Sign In</>
             )}
           </button>
 
