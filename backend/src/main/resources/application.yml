@@ -8,29 +8,33 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:mypassword}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 3
-      minimum-idle: 1
-      idle-timeout: 30000
-      max-lifetime: 600000
-      connection-timeout: 10000
+      maximum-pool-size: 2
+      minimum-idle: 0
+      idle-timeout: 10000
+      max-lifetime: 300000
+      connection-timeout: 30000
+      keepalive-time: 0
     
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         
   flyway:
     enabled: true
     baseline-on-migrate: true
     out-of-order: true
+    repair-on-migrate: true
     ignore-migration-patterns: "*:*"
 
   data:
     redis:
       url: ${REDIS_URL:redis://localhost:6379}
+      timeout: 5000ms
+      connect-timeout: 5000ms
 
 server:
   port: ${PORT:8080}
