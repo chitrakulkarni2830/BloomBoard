@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, UserPlus, LogIn, Shield, Store, Truck } from 'lucide-react';
 import { API_BASE_URL } from './config';
 
 const PETALS = ['🌸','🌺','🌼','🌹','🌷','💐','🌸','🌺','🌼','🌻'];
 
 const Login = ({ onLoginSuccess }) => {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState('ROLE_CUSTOMER');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -14,20 +16,35 @@ const Login = ({ onLoginSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+    const payload = isRegistering
+      ? { username, password, role: selectedRole }
+      : { username, password };
+
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Invalid credentials. Please try again.');
+
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || (isRegistering ? 'Registration failed. Try a different username.' : 'Invalid credentials. Please try again.'));
+      }
+
       onLoginSuccess(data.token, data.username, data.role);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsRegistering(!isRegistering);
+    setError(null);
   };
 
   return (
@@ -43,15 +60,15 @@ const Login = ({ onLoginSuccess }) => {
       <span className="bloom-corner tr">🌺</span>
       <span className="bloom-corner bl">🌸</span>
 
-      {/* Login card */}
+      {/* Login / Register card */}
       <div
         className="anim-fade-up"
         style={{
           position: 'relative',
           zIndex: 10,
           width: '100%',
-          maxWidth: 380,
-          background: 'rgba(255,250,246,0.90)',
+          maxWidth: 420,
+          background: 'rgba(255,250,246,0.92)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           border: '1.5px solid var(--border)',
@@ -70,24 +87,24 @@ const Login = ({ onLoginSuccess }) => {
 
         {/* Header */}
         <div style={{
-          padding: '36px 36px 28px',
+          padding: '32px 36px 24px',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 14,
+          gap: 12,
           background: 'linear-gradient(to bottom, var(--c2), var(--c1))',
         }}>
           {/* Logo mark */}
           <div style={{
-            width: 72,
-            height: 72,
+            width: 68,
+            height: 68,
             borderRadius: 22,
             background: 'linear-gradient(135deg, #ffe0e0, var(--c4))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 38,
+            fontSize: 36,
             boxShadow: '0 4px 20px rgba(255,97,97,0.18)',
             border: '1.5px solid rgba(255,97,97,0.12)',
             animation: 'leafSway 5s ease-in-out infinite',
@@ -98,25 +115,27 @@ const Login = ({ onLoginSuccess }) => {
           <div style={{ textAlign: 'center' }}>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: 700,
               color: 'var(--text)',
               letterSpacing: '-0.3px',
               marginBottom: 4,
             }}>
-              BloomBoard
+              {isRegistering ? 'Create Account' : 'BloomBoard'}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-              Your perishable inventory, beautifully managed
+              {isRegistering
+                ? 'Join BloomBoard to shop or manage perishable inventory'
+                : 'Your perishable inventory, beautifully managed'}
             </p>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: '28px 36px 32px' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '24px 32px 28px' }}>
           {error && (
             <div style={{
-              marginBottom: 18,
+              marginBottom: 16,
               background: 'var(--crimson-bg)',
               border: '1px solid rgba(184,50,50,0.2)',
               borderRadius: 'var(--radius-md)',
@@ -133,7 +152,83 @@ const Login = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {isRegistering && (
+              <div>
+                <label className="field-label" style={{ marginBottom: 6, display: 'block' }}>Account Type / Role</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole('ROLE_CUSTOMER')}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: 'var(--radius-md)',
+                      border: selectedRole === 'ROLE_CUSTOMER' ? '2px solid var(--c5)' : '1px solid var(--border)',
+                      background: selectedRole === 'ROLE_CUSTOMER' ? 'var(--c2)' : '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: selectedRole === 'ROLE_CUSTOMER' ? 'var(--c5)' : 'var(--text-muted)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Store size={18} />
+                    <span>Customer</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole('ROLE_ADMIN')}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: 'var(--radius-md)',
+                      border: selectedRole === 'ROLE_ADMIN' ? '2px solid var(--c5)' : '1px solid var(--border)',
+                      background: selectedRole === 'ROLE_ADMIN' ? 'var(--c2)' : '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: selectedRole === 'ROLE_ADMIN' ? 'var(--c5)' : 'var(--text-muted)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Shield size={18} />
+                    <span>Florist Shop</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole('ROLE_DELIVERY')}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: 'var(--radius-md)',
+                      border: selectedRole === 'ROLE_DELIVERY' ? '2px solid var(--c5)' : '1px solid var(--border)',
+                      background: selectedRole === 'ROLE_DELIVERY' ? 'var(--c2)' : '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: selectedRole === 'ROLE_DELIVERY' ? 'var(--c5)' : 'var(--text-muted)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Truck size={18} />
+                    <span>Delivery</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="field-label">Username</label>
               <div style={{ position: 'relative' }}>
@@ -146,7 +241,7 @@ const Login = ({ onLoginSuccess }) => {
                   required
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder={isRegistering ? "new_user" : "admin"}
                   className="field-input"
                   style={{ paddingLeft: 36 }}
                   id="login-username"
@@ -182,18 +277,42 @@ const Login = ({ onLoginSuccess }) => {
             disabled={loading}
             className="btn-primary"
             id="btn-login-submit"
-            style={{ width: '100%', justifyContent: 'center', marginTop: 24, padding: '13px', fontSize: 15 }}
+            style={{ width: '100%', justifyContent: 'center', marginTop: 20, padding: '12px', fontSize: 14 }}
           >
-            {loading
-              ? <><span style={{ animation: 'leafSway 0.8s ease infinite', display: 'inline-block' }}>🌸</span>&nbsp; Signing in…</>
-              : 'Sign In'}
+            {loading ? (
+              <><span style={{ animation: 'leafSway 0.8s ease infinite', display: 'inline-block' }}>🌸</span>&nbsp; {isRegistering ? 'Registering…' : 'Signing in…'}</>
+            ) : (
+              isRegistering ? <><UserPlus size={16} /> Register & Sign In</> : <><LogIn size={16} /> Sign In</>
+            )}
           </button>
 
-          <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: 'var(--text-faint)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span>Florist Admin: <strong style={{ color: 'var(--text-muted)' }}>admin</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
-            <span>Delivery Agent: <strong style={{ color: 'var(--text-muted)' }}>rider</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
-            <span>Customer Shop: <strong style={{ color: 'var(--text-muted)' }}>alice</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
+          {/* Toggle between Login and Register */}
+          <div style={{ marginTop: 14, textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={toggleMode}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--c5)',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              {isRegistering ? 'Already have an account? Sign In' : 'New user? Register an account'}
+            </button>
           </div>
+
+          {/* Helper demo accounts */}
+          {!isRegistering && (
+            <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: 'var(--text-faint)', display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+              <span>Florist Shop: <strong style={{ color: 'var(--text-muted)' }}>admin</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
+              <span>Delivery Agent: <strong style={{ color: 'var(--text-muted)' }}>rider</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
+              <span>Customer: <strong style={{ color: 'var(--text-muted)' }}>alice</strong> / <strong style={{ color: 'var(--text-muted)' }}>password</strong></span>
+            </div>
+          )}
         </form>
       </div>
     </div>
