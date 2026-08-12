@@ -5,6 +5,7 @@ import {
   CreditCard, Smartphone, ShieldCheck, MapPin, Calendar, User, Phone, FileText, Check, ArrowRight, ArrowLeft,
   Navigation, Package, Clock
 } from 'lucide-react';
+import { API_BASE_URL, PAYMOCK_URL } from './config';
 
 const PETALS = ['🌸','🌺','🌼','🌻','🌹','💐','🌷','🏵️','🌸','🌼'];
 
@@ -203,10 +204,10 @@ export default function CustomerApp({ token, username, onLogout }) {
   const fetchCatalog = async () => {
     try {
       const [batchesRes, productsRes] = await Promise.all([
-        fetch('http://localhost:8080/api/inventory/batches', {
+        fetch(`${API_BASE_URL}/api/inventory/batches`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:8080/api/inventory/products', {
+        fetch(`${API_BASE_URL}/api/inventory/products`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -232,7 +233,7 @@ export default function CustomerApp({ token, username, onLogout }) {
   const fetchMyOrders = async () => {
     setLoadingOrders(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/my-orders?email=${encodeURIComponent(username || 'alice')}@bloomboard.shop`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/my-orders?email=${encodeURIComponent(username || 'alice')}@bloomboard.shop`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -254,7 +255,7 @@ export default function CustomerApp({ token, username, onLogout }) {
     setCustomerOtpError('');
 
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/${customerOtpModalOrder.orderId}/verify-otp`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/${customerOtpModalOrder.orderId}/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -406,8 +407,8 @@ export default function CustomerApp({ token, username, onLogout }) {
     setPaymentStatusText('Initiating PayMock transaction…');
 
     try {
-      // Step 1: Create Payment on PayMock server (port 5001)
-      const paymockCreateRes = await fetch('http://localhost:5001/api/payments', {
+      // Step 1: Create Payment on PayMock server
+      const paymockCreateRes = await fetch(`${PAYMOCK_URL}/api/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -425,7 +426,7 @@ export default function CustomerApp({ token, username, onLogout }) {
       setPaymentStatusText('Connecting to Bank & Verifying Credentials…');
       await new Promise(r => setTimeout(r, 1200));
 
-      // Step 2: Process Payment on PayMock server (port 5001)
+      // Step 2: Process Payment on PayMock server
       const processBody = payMethod === 'UPI' 
         ? { paymentMethod: 'UPI', upiId: upiId }
         : {
@@ -436,7 +437,7 @@ export default function CustomerApp({ token, username, onLogout }) {
             cvv: cardDetails.cvv
           };
 
-      const paymockProcessRes = await fetch(`http://localhost:5001/api/payments/${paymentId}/process`, {
+      const paymockProcessRes = await fetch(`${PAYMOCK_URL}/api/payments/${paymentId}/process`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(processBody)
@@ -468,7 +469,7 @@ export default function CustomerApp({ token, username, onLogout }) {
         deliveryDate: `${deliveryForm.deliveryDate}T00:00:00`
       };
 
-      const orderRes = await fetch('http://localhost:8080/api/v1/orders/checkout', {
+      const orderRes = await fetch(`${API_BASE_URL}/api/v1/orders/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

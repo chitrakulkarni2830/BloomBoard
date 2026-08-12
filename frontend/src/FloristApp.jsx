@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, Search, LogOut, Package, AlertCircle, Plus, Trash2, CheckCircle2, Truck, Box, Key, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
+import { API_BASE_URL } from './config';
 
 const FLOWER_EMOJI = {
   'Rose':           '🌹',
@@ -59,7 +60,7 @@ export default function FloristApp({ token, username, onLogout }) {
 
   const fetchBatches = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/inventory/batches', {
+      const res = await fetch(`${API_BASE_URL}/api/inventory/batches`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { onLogout(); return; }
@@ -75,7 +76,7 @@ export default function FloristApp({ token, username, onLogout }) {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/inventory/products', {
+      const res = await fetch(`${API_BASE_URL}/api/inventory/products`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -93,7 +94,7 @@ export default function FloristApp({ token, username, onLogout }) {
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
-      const res = await fetch('http://localhost:8080/api/v1/orders/all', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -116,7 +117,7 @@ export default function FloristApp({ token, username, onLogout }) {
   const handleWasteBatch = async (batchId) => {
     if (!window.confirm('Mark this batch as wasted? This will update stock.')) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/inventory/batches/${batchId}/waste`, {
+      const res = await fetch(`${API_BASE_URL}/api/inventory/batches/${batchId}/waste`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -129,7 +130,7 @@ export default function FloristApp({ token, username, onLogout }) {
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/${orderId}/status?status=${newStatus}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}/status?status=${newStatus}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -142,7 +143,7 @@ export default function FloristApp({ token, username, onLogout }) {
 
   const handleTriggerDoorstepOtp = async (orderId) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/${orderId}/trigger-otp`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}/trigger-otp`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -161,7 +162,7 @@ export default function FloristApp({ token, username, onLogout }) {
     setOtpError('');
 
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/${otpModalOrder.orderId}/verify-otp`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/${otpModalOrder.orderId}/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +191,7 @@ export default function FloristApp({ token, username, onLogout }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch('http://localhost:8080/api/inventory/batches', {
+      const res = await fetch(`${API_BASE_URL}/api/inventory/batches`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

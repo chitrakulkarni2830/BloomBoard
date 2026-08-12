@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, MapPin, Phone, CheckCircle2, LogOut, Key, Navigation, ShieldCheck, Clock, PackageCheck, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from './config';
 
 export default function DeliveryApp({ token, username, onLogout }) {
   const [orders, setOrders] = useState([]);
@@ -16,7 +17,7 @@ export default function DeliveryApp({ token, username, onLogout }) {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8080/api/v1/orders/all', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) { onLogout(); return; }
@@ -37,7 +38,7 @@ export default function DeliveryApp({ token, username, onLogout }) {
 
   const handleTriggerDoorstepOtp = async (orderId) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/${orderId}/trigger-otp`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}/trigger-otp`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -56,7 +57,7 @@ export default function DeliveryApp({ token, username, onLogout }) {
     setOtpError('');
 
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/orders/${otpModalOrder.orderId}/verify-otp`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders/${otpModalOrder.orderId}/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
