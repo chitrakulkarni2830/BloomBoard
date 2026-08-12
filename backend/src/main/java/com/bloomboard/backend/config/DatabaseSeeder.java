@@ -20,6 +20,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final BatchRepository batchRepository;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) {
         try {
             String result = inventoryService.seedDatabaseIfEmpty();
