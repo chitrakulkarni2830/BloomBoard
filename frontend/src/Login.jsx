@@ -34,7 +34,19 @@ const Login = ({ onLoginSuccess }) => {
       });
       clearTimeout(timeoutId);
 
-      const data = await res.json();
+      // If Render is waking up, it often returns 502 Bad Gateway or 503 Service Unavailable
+      if (res.status === 502 || res.status === 503) {
+        return { success: false, timedOut: true };
+      }
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        // If it's not JSON (e.g., Render HTML error page), treat as waking up
+        return { success: false, timedOut: true };
+      }
+
       if (!res.ok) {
         throw new Error(data.message || (payload.role ? 'Registration failed. Try a different username.' : 'Invalid credentials. Please try again.'));
       }
