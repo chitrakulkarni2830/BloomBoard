@@ -283,6 +283,30 @@ export default function CustomerApp({ token, username, onLogout }) {
     fetchCatalog();
   }, [token]);
 
+  // Authentic Pune Flower Market Price Map (Gultekdi Wholesale & Retail Rates in INR ₹)
+  const PUNE_MARKET_PRICES = {
+    'Rose': 20.00,
+    'Peony': 280.00,
+    'Tulip': 150.00,
+    'Orchid': 55.00,
+    'Lily': 95.00,
+    'Carnation': 25.00,
+    'Gerbera': 20.00,
+    'Chrysanthemum': 20.00,
+    'Anthurium': 50.00,
+    'Hydrangea': 180.00,
+    'Snapdragon': 40.00,
+    'Ranunculus': 75.00,
+    'Bird of Paradise': 85.00,
+    'Freesia': 50.00,
+    'Gladiolus': 35.00,
+    'Iris': 65.00,
+    'Lisianthus': 75.00,
+    'Alstroemeria': 40.00,
+    'Stock Flower': 45.00,
+    'Sunflower': 40.00
+  };
+
   // Aggregate batches into customer product cards
   const productCatalog = React.useMemo(() => {
     const map = {};
@@ -290,7 +314,8 @@ export default function CustomerApp({ token, username, onLogout }) {
       if (b.status !== 'ACTIVE' || b.quantity <= 0) return;
       if (!map[b.product]) {
         const matchedProduct = products.find(p => p.name === b.product);
-        const basePrice = matchedProduct ? 2.50 : 2.00;
+        const priceFromDb = b.purchasePrice && b.purchasePrice > 2.5 ? b.purchasePrice : null;
+        const basePrice = priceFromDb || PUNE_MARKET_PRICES[b.product] || 25.00;
         map[b.product] = {
           product: b.product,
           sku: b.sku,
