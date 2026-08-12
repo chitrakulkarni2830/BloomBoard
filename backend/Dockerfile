@@ -24,4 +24,4 @@ COPY --from=build /app/target/*.jar app.jar
 # Dynamic PORT environment variable is mapped by Spring Boot server.port=${PORT:8080}
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Xmx256m", "-Xss512k", "-Dspring.main.lazy-initialization=true", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.main.lazy-initialization=true", "-jar", "app.jar"]
